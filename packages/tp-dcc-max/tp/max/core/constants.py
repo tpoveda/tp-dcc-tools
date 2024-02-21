@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 
 """
-Module that contains constants definitions for tpDcc.dccs.max
+Module that contains constants definitions for tp-dcc-max
 """
 
 AXES = ['x', 'y', 'z']

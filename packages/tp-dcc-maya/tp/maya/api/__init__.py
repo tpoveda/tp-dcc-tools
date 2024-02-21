@@ -16,8 +16,8 @@ from tp.maya.api import factory
 from tp.maya.api import env
 from tp.maya.api.base import (
 	node_by_name, nodes_by_names, nodes_by_type_names, node_by_object, iterate_selected, selected, select,
-	lock_node_context, plug_by_name, lock_node_plug_context, lock_state_attr_context, DGNode, DagNode, ObjectSet,
-	ContainerAsset, SkinCluster, BlendShape, DisplayLayer, Mesh, NurbsCurve, IkHandle, Joint, Plug,
+	clear_selection, lock_node_context, plug_by_name, lock_node_plug_context, lock_state_attr_context, DGNode, DagNode,
+	ObjectSet, ContainerAsset, SkinCluster, BlendShape, DisplayLayer, Mesh, NurbsCurve, IkHandle, Joint, Plug,
 	LOCAL_TRANSLATE_ATTRS, LOCAL_ROTATE_ATTRS, LOCAL_SCALE_ATTRS, LOCAL_TRANSFORM_ATTRS
 )
 from tp.maya.api.contexts import namespace_context

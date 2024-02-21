@@ -25,7 +25,7 @@ from tp.common import plugin
 logger = log.tpLogger
 
 
-def execute(command_id: str, **kwargs: dict) -> Any:
+def execute(command_id: str, **kwargs) -> Any:
     """
     Executes given DCC command with given ID.
 

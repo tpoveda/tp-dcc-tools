@@ -22,6 +22,12 @@ def joint_chain(start_joint: api.Joint, end_joint: api.Joint | None = None) -> L
     :rtype: List[api.DagNode]
     """
 
+    if not start_joint:
+        return []
+
+    if start_joint == end_joint:
+        return [start_joint]
+
     chain = [start_joint] + list(start_joint.iterateChildren(node_types=(api.OpenMaya.MFn.kJoint,)))
     if not end_joint:
         return chain

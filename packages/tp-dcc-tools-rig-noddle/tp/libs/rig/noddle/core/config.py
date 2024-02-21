@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import typing
 
+from tp.common.python import strings
 from tp.maya.cmds import helpers as maya_helpers
 from tp.preferences.interfaces import noddle
 from tp.libs.rig.noddle import consts
@@ -61,6 +62,11 @@ class Configuration:
         self._use_proxy_attributes = True
         self._use_containers = False
         self._blackbox = False
+        self._selection_child_highlighting = False
+        self._auto_align_guides = True
+        self._guide_control_visibility = False
+        self._guide_pivot_visibility = True
+        self._ignore_existing_constraints_on_skeleton_attachment = False
 
         self._initialize_managers()
         self._initialize_environment()
@@ -141,6 +147,101 @@ class Configuration:
 
         return self._blackbox
 
+    @property
+    def selection_child_highlighting(self) -> bool:
+        """
+        Returns whether selection child highlighting should be enabled when building rig controls.
+
+        :return: True if selection child highlighting feature should be enabled; False otherwise.
+        :rtype: bool
+        """
+
+        return self._selection_child_highlighting
+
+    @selection_child_highlighting.setter
+    def selection_child_highlighting(self, flag: bool):
+        """
+        Sets whether selection child highlighting should be enabled.
+
+        :param bool flag: True to enable child highlighting; False to disable it.
+        """
+
+        self._selection_child_highlighting = flag
+
+    @property
+    def auto_align_guides(self) -> bool:
+        """
+        Returns whether auto alignment should be run when building the skeleton layer.
+
+        :return: True if guides auto alignment should be run; False otherwise.
+        :rtype: bool
+        """
+
+        return self._auto_align_guides
+
+    @auto_align_guides.setter
+    def auto_align_guides(self, flag: bool):
+        """
+        Sets whether auto alignment should be run when building the skeleton layer.
+
+        :param bool flag: True to enable auto align guide feature; False to disable it.
+        """
+
+        self._auto_align_guides = flag
+
+    @property
+    def guide_control_visibility(self) -> bool:
+        """
+        Returns whether guide controls are visible.
+
+        :return: True if guide controls are visible; False otherwise.
+        :rtype: bool
+        """
+
+        return self._guide_control_visibility
+
+    @guide_control_visibility.setter
+    def guide_control_visibility(self, flag: bool):
+        """
+        Sets whether guide controls are visible.
+
+        :param bool flag: True if guide controls are visible; False otherwise.
+        """
+
+        self._guide_control_visibility = flag
+
+    @property
+    def guide_pivot_visibility(self) -> bool:
+        """
+        Returns whether guide pivot is visible.
+
+        :return: True if guide pivot is visible; False otherwise.
+        :rtype: bool
+        """
+
+        return self._guide_pivot_visibility
+
+    @guide_pivot_visibility.setter
+    def guide_pivot_visibility(self, flag: bool):
+        """
+        Sets whether guide pivot is visible.
+
+        :param bool flag: True if guide pivot is visible; False otherwise.
+        """
+
+        self._guide_pivot_visibility = flag
+
+    @property
+    def ignore_existing_constraints_on_skeleton_attachment(self) -> bool:
+        """
+        Returns whether ignore constraints when attaching components to rig skeleton.
+
+        :return: True if constraints should be ignored while attaching components to rig skeleton; False otherwise.
+        :rtype: bool
+        """
+
+        return self._ignore_existing_constraints_on_skeleton_attachment
+
     def update_from_cache(self, cache: dict, rig: Rig | None = None):
         """
         Updates this configuration from the given configuration dictionary.
@@ -163,6 +264,45 @@ class Configuration:
         cache = rig.cached_configuration()
         self.update_from_cache(cache)
         return cache
+
+    def serialize(self, rig: Rig) -> dict:
+        """
+        Serializes current configuration data.
+
+        :param Rig rig: rig this configuration belongs to.
+        :return: serialized data.
+        :rtype: dict
+        """
+
+        cache = self._config_cache
+        overrides = {}
+
+        for setting in ('useProxyAttributes',
+                        'useContainers',
+                        'blackBox',
+                        'requiredMayaPlugins',
+                        'selectionChildHighlighting',
+                        'autoAlignGuides',
+                        'guidePivotVisibility',
+                        'guideControlVisibility',
+                        'hideControlShapesInOutliner'):
+            config_state = cache.get(setting)
+            current_state = None
+            if hasattr(self, setting):
+                current_state = getattr(self, setting)
+            elif hasattr(self, strings.camel_case_to_snake_case(setting)):
+                current_state = getattr(self, strings.camel_case_to_snake_case(setting))
+            if current_state is not None and current_state != config_state:
+                overrides[setting] = current_state
+
+        # for build_script in self._build_scripts:
+        #     properties = build_script_config.get(build_script.ID, {})
+        #     overrides.setdefault('buildScripts', []).append([build_script.ID, properties])
+
+        if self._current_naming_preset.name != consts.DEFAULT_BUILTIN_PRESET_NAME:
+            overrides[consts.NAMING_PRESET_DESCRIPTOR_KEY] = self._current_naming_preset.name
+
+        return overrides
 
     def find_name_manager_for_type(self, noddle_type: str, preset_name: str | None = None) -> NameManager | None:
         """

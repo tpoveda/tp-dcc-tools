@@ -6,11 +6,10 @@ from tp.core import log
 from tp.common.python import decorators
 
 from tp.libs.rig.noddle.core import asset
-from tp.libs.rig.noddle.utils import files
-from tp.libs.rig.noddle.functions import characters
+from tp.libs.rig.noddle.functions import files, rigs
 
 if typing.TYPE_CHECKING:
-    from tp.libs.rig.noddle.meta.components.character import Character
+    from tp.libs.rig.noddle.core.rig import Rig
 
 
 logger = log.rigLogger
@@ -28,7 +27,7 @@ class AbstractIOManager:
         super().__init__()
 
         self._asset = asset.Asset.get()
-        self._character = characters.get_build_character()
+        self._rig = rigs.get_build_rig()
         if not self._asset:
             logger.error('Asset is not set!')
             raise RuntimeError
@@ -57,6 +56,17 @@ class AbstractIOManager:
         pass
 
     @decorators.abstractmethod
+    def new_file(self) -> str:
+        """
+        Returns path to new file version.
+
+        :return: new file version.
+        :rtype: str
+        """
+
+        pass
+
+    @decorators.abstractmethod
     def latest_file(self) -> str:
         """
         Returns path to the latest versioned file.
@@ -72,8 +82,8 @@ class AbstractIOManager:
         return self._asset
 
     @property
-    def character(self) -> Character:
-        return self._character
+    def rig(self) -> Rig:
+        return self._rig
 
     @property
     def versioned_files(self) -> dict[str, list[str, str]]:

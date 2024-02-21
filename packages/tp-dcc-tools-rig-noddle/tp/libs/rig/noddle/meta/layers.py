@@ -47,6 +47,7 @@ class NoddleLayer(base.DependentNode):
             (
                 dict(name=consts.NODDLE_EXTRA_NODES_ATTR, isArray=True, type=api.kMFnMessageAttribute),
                 dict(name=consts.NODDLE_ROOT_TRANSFORM_ATTR, type=api.kMFnMessageAttribute),
+                dict(name=consts.NODDLE_CONNECTORS_ATTR, isArray=True, type=api.kMFnMessageAttribute),
                 dict(
                     name=consts.NODDLE_SETTING_NODES_ATTR, type=api.kMFnCompoundAttribute, isArray=True,
                     children=[
@@ -157,11 +158,11 @@ class NoddleLayer(base.DependentNode):
             if source:
                 yield source.node()
 
-    def add_extra_nodes(self, extra_nodes: list[api.DGNode]):
+    def add_extra_nodes(self, extra_nodes: Iterable[api.DGNode]):
         """
         Connects given nodes into this meta node instance as extra nodes.
 
-        :param list[api.DGNode] extra_nodes: nodes to add as extra node.
+        :param Iterable[api.DGNode] extra_nodes: nodes to add as extra node.
         """
 
         extras_array = self.attribute(consts.NODDLE_EXTRA_NODES_ATTR)
@@ -893,7 +894,7 @@ class NoddleSkeletonLayer(NoddleLayer):
         """
         Creates a new joint based on given data.
 
-        :param dict kwargs: joint data. e.g:
+        :param kwargs: joint data. e.g:
             {
                 'id': 'root',
                 'name': 'rootJnt'
@@ -1347,8 +1348,14 @@ class NoddleRigLayer(NoddleLayer):
             world_matrix = api.TransformationMatrix(api.Matrix(world_matrix))
             world_matrix.setScale((1, 1, 1), api.kWorldSpace)
             kwargs['worldMatrix'] = world_matrix.asMatrix()
+
         new_control.create(**kwargs)
         self.add_control(new_control)
+
+        new_control.set_outliner_color(27)
+        # new_control.set_line_width(new_control.LINE_WIDTH)
+        new_control.lock_attributes(kwargs.get('not_locked_attributes', ['t', 'r']))
+        # new_control.orient_shape(direction=kwargs.get('orient_axis', 'x'))
 
         for srt_descriptor in kwargs.get('srts', []):
             self.create_srt_buffer(kwargs['id'], srt_descriptor['name'])

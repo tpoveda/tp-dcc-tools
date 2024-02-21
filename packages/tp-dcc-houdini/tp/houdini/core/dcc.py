@@ -159,7 +159,7 @@ def confirm_dialog(title, message, button=None, cancel_button=None, default_butt
     :return:
     """
 
-    return QMessageBox.question(dcc.get_main_window(), title, message)
+    return QMessageBox.question(dcc.main_window(), title, message)
 
 
 def warning(message):
@@ -169,7 +169,7 @@ def warning(message):
     :return:
     """
 
-    QMessageBox.warning(dcc.get_main_window(), 'Warning', message)
+    QMessageBox.warning(dcc.main_window(), 'Warning', message)
 
 
 def shelf_exists(shelf_name):

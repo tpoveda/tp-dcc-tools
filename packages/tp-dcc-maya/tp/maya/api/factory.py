@@ -5,7 +5,7 @@ from typing import Any
 import maya.cmds as cmds
 import maya.api.OpenMaya as OpenMaya
 
-from tp.maya.api import consts, base, contexts
+from tp.maya.api import consts, base, contexts, curves
 from tp.maya.om import factory
 
 
@@ -218,3 +218,26 @@ def create_ik_handle(
             handle.setParent(parent)
 
     return handle, effector
+
+
+def create_nurbs_curve_from_points(
+        name: str, points: list[list[float, float, float], ...], shape_data: dict | None = None,
+        parent: base.DagNode | None = None) -> tuple[base.DagNode, list[base.DGNode]]:
+    """
+    Creates a NURBS curve based on given world space points.
+
+    :param str name: name of the curve node.
+    :param list[list[float, float, float], ...] points: list of points for the curve in world space.
+    :param dict or None shape_data: optional curve shape data.
+    :param base.DagNode or None parent: optional parent for the curve transform node.
+    :return: tuple containing the curve transform node and all its shapes.
+    :rtype: tuple[base.DagNode, list[base.DGNode]]
+    """
+
+    spline_curve_transform, created_shapes = curves.create_curve_from_points(
+        name=name, points=points, shape_dict=shape_data, parent=parent.object() if parent is not None else None)
+
+    return (
+        base.node_by_name(spline_curve_transform),
+        [base.node_by_name(i) for i in created_shapes if i != spline_curve_transform]
+    )

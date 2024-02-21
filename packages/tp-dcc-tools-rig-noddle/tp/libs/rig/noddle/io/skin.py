@@ -9,9 +9,8 @@ from tp.core import log
 from tp.maya import api
 from tp.libs.rig.skinner import core as skinner
 from tp.preferences.interfaces import noddle
-from tp.libs.rig.noddle.utils import files
 from tp.libs.rig.noddle.io import abstract
-from tp.libs.rig.noddle.functions import deformer
+from tp.libs.rig.noddle.functions import files, deformer
 
 logger = log.rigLogger
 

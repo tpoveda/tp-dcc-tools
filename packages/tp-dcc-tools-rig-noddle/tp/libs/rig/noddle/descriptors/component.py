@@ -165,6 +165,7 @@ class ComponentDescriptor(helpers.ObjectDict):
         self[consts.OUTPUT_LAYER_DESCRIPTOR_KEY].update(kwargs.get(consts.OUTPUT_LAYER_DESCRIPTOR_KEY, {}))
         self[consts.SKELETON_LAYER_DESCRIPTOR_KEY].update(kwargs.get(consts.SKELETON_LAYER_DESCRIPTOR_KEY, {}))
         self[consts.RIG_LAYER_DESCRIPTOR_KEY].update(kwargs.get(consts.RIG_LAYER_DESCRIPTOR_KEY, {}))
+        self._update_space_switching(kwargs.get(consts.SPACE_SWITCH_DESCRIPTOR_KEY, []))
         for k, v in kwargs.items():
             if k not in consts.DESCRIPTOR_KEYS_TO_SKIP_UPDATE:
                 self[k] = v
@@ -239,3 +240,6 @@ class ComponentDescriptor(helpers.ObjectDict):
         """
 
         pprint.pprint(dict(self.serialize()))
+
+    def _update_space_switching(self, spaces):
+        pass

@@ -684,14 +684,14 @@ class MetaBase(base.DGNode):
 
         return destination_plug
 
-    def connect_to_by_plug(self, destination_plug: OpenMaya.MPlug, node: base.DGNode) -> OpenMaya.MPlug:
+    def connect_to_by_plug(self, destination_plug: base.Plug, node: base.DGNode) -> base.Plug:
         """
-        Connects given node to the message attribute of the given plug intsance.
+        Connects given node to the message attribute of the given plug instance.
 
-        :param OpenMaya.MPlug destination_plug: target plug to connect.
+        :param base.Plug destination_plug: target plug to connect.
         :param base.DGNode node: destination node.
         :return: destination plug.
-        :rtype: OpenMaya.MPlug
+        :rtype: base.Plug
         """
 
         source_plug = node.attribute('message')

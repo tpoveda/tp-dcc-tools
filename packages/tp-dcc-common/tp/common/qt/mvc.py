@@ -32,6 +32,15 @@ class Model(QObject):
         for listener in self._listeners.get(key, []):
             listener(value)
 
+    def update_all(self):
+        """
+        Updates all listeners.
+        """
+
+        for key, value in self.state.items():
+            for listener in self._listeners.get(key, []):
+                listener(value)
+
     def updater(self, key: str) -> Callable:
         """
         Returns a callback which, when called, changes the data.

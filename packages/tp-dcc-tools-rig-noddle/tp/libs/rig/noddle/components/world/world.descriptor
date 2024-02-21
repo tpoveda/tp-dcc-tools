@@ -7,8 +7,8 @@ region: ''
 description: 'World component for all Noddle rigs.'
 inputLayer:
   dag:
-    - id: world
-      name: world
+    - id: root
+      name: root
       critType: input
       root: true
       parent: null
@@ -16,22 +16,21 @@ inputLayer:
       rotate: [0.0, 0.0, 0.0, 1.0]
       rotateOrder: 2
       children: []
-  settings: []
 outputLayer:
   dag:
-    - id: world
-      name: world
+    - id: root
+      name: root
       critType: output
       parent: null
       translate: [0.0, 0.0, 0.0]
       rotate: [0.0, 0.0, 0.0, 1.0]
       rotateOrder: 2
-      children:
-        - id: offset
-          name: offset
-          critType: output
-          children:
-            - id: rootMotion
-              name: rootMotion
-              critType: output
-  settings: []
+      children: []
+skeletonLayer:
+  settings:
+    - name: 'startJoint'
+      type: 13
+      value: ''
+    - name: 'endJoint'
+      type: 13
+      value: ''

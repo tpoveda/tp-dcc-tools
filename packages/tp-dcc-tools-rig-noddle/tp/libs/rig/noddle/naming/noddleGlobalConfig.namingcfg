@@ -73,6 +73,13 @@
       "exampleFields": {"componentName":  "arm", "side": "L","section":  "world", "type": "container"}
     },
     {
+      "name": "guideName",
+      "creator": "Tomi Poveda",
+      "description": "The expression for Guide node names.",
+      "expression": "{componentName}_{side}_{id}_{type}",
+      "exampleFields": {"componentName":  "arm", "side": "L", "id":  "world", "type":  "guide"}
+    },
+    {
       "name": "controlName",
       "creator": "Tomi Poveda",
       "description": "The expression for Animation Control node names.",
@@ -92,6 +99,13 @@
       "description": "Deformation joint chain name.",
       "expression": "{componentName}_{side}_{id}_{type}",
       "exampleFields": {"componentName":  "arm", "side": "L","id": "upr", "type": "joint"}
+    },
+    {
+      "name": "controlJointName",
+      "creator": "Tomi Poveda",
+      "description": "Control joint name.",
+      "expression": "{componentName}_{side}_{id}_{type}",
+      "exampleFields": {"componentName":  "arm", "side": "L","id": "upr", "type": "controlJoint"}
     },
     {
       "name": "connectorsGrp",
@@ -222,6 +236,7 @@
             "output": "out",
             "hrc": "hrc",
             "joint": "jnt",
+            "controlJoint": "cjnt",
             "objectSet": "set",
             "transform": "srt",
             "poleVector": "pv",
@@ -242,7 +257,8 @@
             "pairBlend": "pairBlend",
             "multDoubleLinear": "multDoubleLinear",
             "ikHandle": "ikhandle",
-            "effector": "ikeffector"
+            "effector": "ikeffector",
+            "skinCluster": "skin"
         }
     }
   ]

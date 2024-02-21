@@ -147,7 +147,8 @@ def load_from_lib(curve_name: str) -> Dict:
 	return data
 
 
-def load_and_create_from_lib(curve_name: str, parent: OpenMaya.MObject | None = None):
+def load_and_create_from_lib(
+		curve_name: str, parent: OpenMaya.MObject | None = None) -> tuple[OpenMaya.MObject, list[OpenMaya.MObject]]:
 	"""
 	Loads and creates the curve from curves library. If parent is given, shape node will be parented under it.
 

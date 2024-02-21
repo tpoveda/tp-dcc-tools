@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import typing
+from typing import Iterable, Any
 
 from overrides import override
 
@@ -12,6 +13,7 @@ from tp.maya.meta import base
 
 from tp.libs.rig.noddle import consts
 from tp.libs.rig.noddle.meta import layers
+from tp.libs.rig.noddle.descriptors import component
 
 if typing.TYPE_CHECKING:
     from tp.libs.rig.noddle.meta.layers import (
@@ -75,6 +77,40 @@ class NoddleComponent(base.MetaBase):
 
         return attrs
 
+    @override(check_signature=False)
+    def serializeFromScene(self, layer_ids: Iterable[str] | None = None):
+
+        data = {
+            'name': self.attribute(consts.NODDLE_NAME_ATTR).asString(),
+            'side': self.attribute(consts.NODDLE_SIDE_ATTR).asString(),
+            'type': self.attribute(consts.NODDLE_COMPONENT_TYPE_ATTR).asString(),
+            'enabled': self.attribute(consts.NODDLE_IS_ENABLED_ATTR).asBool(),
+        }
+
+        if self.attribute(consts.NODDLE_HAS_RIG_ATTR).asBool():
+        # if not self.attribute(consts.CRIT_HAS_GUIDE_ATTR).asBool():
+            raw = self.raw_descriptor_data()
+            return component.parse_raw_descriptor(raw)
+
+        if layer_ids:
+            for layer_id, layer_node in self.layer_id_mapping().items():
+                if layer_id in layer_ids:
+                    data.update(layer_node.serializeFromScene())
+        else:
+            for i in iter(self.layers()):
+                data.update(i.serializeFromScene())
+
+        return data
+
+    @override(check_signature=False)
+    def delete(self, mod: api.OpenMaya.MDGModifier | None = None) -> bool:
+        root = self.root_transform()
+        if root:
+            root.lock(False)
+            root.delete()
+
+        return super().delete(mod=mod)
+
     def root_transform(self) -> api.DagNode | None:
         """
         Returns the root transform node for this component instance.
@@ -113,14 +149,15 @@ class NoddleComponent(base.MetaBase):
 
         # space_switching = self.attribute(consts.CRIT_DESCRIPTOR_CACHE_SPACE_SWITCHING_ATTR)
         info = self.attribute(consts.NODDLE_DESCRIPTOR_CACHE_INFO_ATTR)
-        prefix = 'critDescriptorCache'
+        prefix = 'noddleDescriptorCache'
         sub_keys = (
-            consts.SETTINGS_DESCRIPTOR_KEY, consts.METADATA_DESCRIPTOR_KEY)
+            consts.DAG_DESCRIPTOR_KEY, consts.SETTINGS_DESCRIPTOR_KEY, consts.METADATA_DESCRIPTOR_KEY,
+            consts.DG_DESCRIPTOR_KEY)
         data = {'info': info.asString() or '{}'}
 
         for layer_name in consts.LAYER_DESCRIPTOR_KEYS:
             attr_name = prefix + layer_name[0].upper() + layer_name[1:]
-            layer_data = dict()
+            layer_data = {}
             for k in sub_keys:
                 sub_attr_name = attr_name + k[0].upper() + k[1:]
                 try:
@@ -176,12 +213,12 @@ class NoddleComponent(base.MetaBase):
 
         return self.find_children_by_class_types(layer_types)
 
-    def layer_id_mapping(self) -> dict[str, NoddleLayer]:
+    def layer_id_mapping(self) -> dict[str, Any]:
         """
         Returns a list with all layers linked to this component meta node.
 
         :return: mapping of layer ids with layer meta node instances.
-        :rtype: dict[str, NoddleLayer]
+        :rtype: dict[str, Any]
         """
 
         layer_types = (

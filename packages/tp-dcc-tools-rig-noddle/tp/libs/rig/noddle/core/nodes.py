@@ -1,20 +1,24 @@
 from __future__ import annotations
 
-from typing import Iterator
+from typing import Iterator, Iterable
 
 from overrides import override
 
+import maya.cmds as cmds
 import maya.api.OpenMaya as OpenMaya
 
 from tp.core import log
 from tp.common.python import helpers
 from tp.maya import api
 from tp.maya.api import curves
+from tp.maya.cmds import shape as cmds_shape
 from tp.maya.om import factory, plugs, nodes as om_nodes
 from tp.maya.libs import curves as curves_library
 from tp.maya.meta import base
 
-from tp.libs.rig.crit import consts
+from tp.preferences.interfaces import noddle
+from tp.libs.rig.noddle import consts
+from tp.libs.rig.noddle.functions import attributes, outliner
 
 logger = log.rigLogger
 
@@ -38,7 +42,7 @@ class SettingsNode(api.DGNode):
 
         settings_node = api.factory.create_dg_node(name, node_type=node_type)
         self.setObject(settings_node.object())
-        self.addAttribute(consts.CRIT_ID_ATTR, type=api.attributetypes.kMFnDataString, value=id, locked=True)
+        self.addAttribute(consts.NODDLE_ID_ATTR, type=api.attributetypes.kMFnDataString, value=id, locked=True)
 
         return self
 
@@ -51,7 +55,7 @@ class SettingsNode(api.DGNode):
         :rtype: list[dict]
         """
 
-        skip = (consts.CRIT_ID_ATTR, 'id')
+        skip = (consts.NODDLE_ID_ATTR, 'id')
         return [plugs.serialize_plug(attr.plug()) for attr in self.iterateExtraAttributes(skip=skip)]
 
     def id(self) -> str:
@@ -62,7 +66,7 @@ class SettingsNode(api.DGNode):
         :rtype: str
         """
 
-        id_attr = self.attribute(consts.CRIT_ID_ATTR)
+        id_attr = self.attribute(consts.NODDLE_ID_ATTR)
         return id_attr.value() if id_attr is not None else ''
 
 
@@ -71,15 +75,17 @@ class ControlNode(api.DagNode):
     Wrapper class for CRIT control nodes.
     """
 
+    LINE_WIDTH: int | None = None
+
     @override(check_signature=False)
-    def create(self, **kwargs: dict):
+    def create(self, **kwargs):
         """
         Creates control with given arguments.
 
-        :param dict kwargs: dictionary with arguments to create control with.
+        :param kwargs: dictionary with arguments to create control with.
             {
                 'color': (1.0, 1.0, 1.0),
-                consts.CRIT_ID_ATTR: 'ctrl',
+                 consts.CRIT_ID_ATTR: 'ctrl',
                 'name': 'myCtrl',
                 'translate': [0.0, 0.0, 0.0] or api.MVector
                 'rotate': [0.0, 0.0, 0.0]		# radians
@@ -91,10 +97,13 @@ class ControlNode(api.DagNode):
         :raises SystemError: if a node cannot be deserialized from given arguments.
         """
 
-        shape = kwargs.get('shape')
+        if ControlNode.LINE_WIDTH is None:
+            ControlNode.LINE_WIDTH = noddle.noddle_interface().rig_display_line_width()
+
+        shape = kwargs.get('shape', 'cube')
         parent = kwargs.get('parent')
         kwargs['type'] = kwargs.get('type', 'critPinLocator')
-        kwargs['name'] = kwargs.get('name', 'Control')
+        kwargs['name'] = kwargs.get('name', 'control')
         kwargs['parent'] = None
 
         try:
@@ -109,6 +118,7 @@ class ControlNode(api.DagNode):
         with api.lock_state_attr_context(
                 self, ['rotateOrder'] + api.LOCAL_TRANSFORM_ATTRS + ['translate', 'rotate', 'scale'], state=False):
             self.setRotationOrder(kwargs.get('rotateOrder', api.consts.kRotateOrder_XYZ))
+
             world_matrix = kwargs.get('worldMatrix')
             if world_matrix is None:
                 self.setTranslation(api.Vector(kwargs.get('translate', (0.0, 0.0, 0.0))), space=api.kWorldSpace)
@@ -116,6 +126,19 @@ class ControlNode(api.DagNode):
                 self.setScale(kwargs.get('scale', (1.0, 1.0, 1.0)))
             else:
                 self.setWorldMatrix(api.Matrix(world_matrix))
+
+            # If a guide object is given, we match control position, orientation and pivot to it.
+            guide: api.DagNode | None = kwargs.get('guide')
+            if guide is not None:
+                match_pos = kwargs.get('match_pos', True)
+                match_orient = kwargs.get('match_orient', True)
+                match_pivot = kwargs.get('match_pivot', True)
+                delete_guide = kwargs.get('delete_guide', False)
+                cmds.matchTransform(
+                    self.fullPathName(), guide.fullPathName(), pos=match_pos, rot=match_orient, piv=match_pivot)
+                if delete_guide:
+                    guide.delete()
+
             if parent is not None:
                 self.setParent(parent, maintain_offset=True)
 
@@ -124,11 +147,11 @@ class ControlNode(api.DagNode):
                 self.add_shape_from_lib(shape, replace=True)
                 color = kwargs.get('color')
                 if color:
-                    self.setShapeColor(color, shape_index=-1)
+                    self.set_color(color)
             else:
                 self.add_shape_from_data(shape, space=api.kWorldSpace, replace=True)
         self.addAttribute(
-            consts.CRIT_ID_ATTR, api.kMFnDataString, value=kwargs.get('id', kwargs['name']), default='', locked=True)
+            consts.NODDLE_ID_ATTR, api.kMFnDataString, value=kwargs.get('id', kwargs['name']), default='', locked=True)
 
         child_highlighting = kwargs.get('selection_child_highlighting')
         if child_highlighting is not None:
@@ -188,7 +211,7 @@ class ControlNode(api.DagNode):
             include_attributes=include_attributes, extra_attributes_only=extra_attributes_only,
             use_short_names=use_short_names, include_namespace=include_namespace)
         base_data.update({
-            'id': self.attribute(consts.CRIT_ID_ATTR).value(),
+            'id': self.attribute(consts.NODDLE_ID_ATTR).value(),
             'name': base_data['name'].replace('_guide', ''),
             'shape': curves.serialize_transform_curve(self.object(), space=api.kObjectSpace, normalize=False),
             'critType': 'control'
@@ -222,7 +245,7 @@ class ControlNode(api.DagNode):
         :rtype: str
         """
 
-        id_attr = self.attribute(consts.CRIT_ID_ATTR)
+        id_attr = self.attribute(consts.NODDLE_ID_ATTR)
         return id_attr.value() if id_attr is not None else ''
 
     def controller_tag(self) -> api.DGNode | None:
@@ -271,9 +294,9 @@ class ControlNode(api.DagNode):
         """
 
         if shape_name not in curves_library.names():
-            return None, list()
+            return None, []
 
-        color_data = dict()
+        color_data = {}
         if maintain_colors:
             for shape in self.iterateShapes():
                 color_data = om_nodes.node_color_data(shape.object())
@@ -284,6 +307,7 @@ class ControlNode(api.DagNode):
 
         shapes = list(map(api.node_by_object, curves_library.load_and_create_from_lib(
             shape_name, parent=self.object())[1]))
+
         if maintain_colors:
             for shape in shapes:
                 om_nodes.set_node_color(
@@ -294,7 +318,8 @@ class ControlNode(api.DagNode):
 
     def add_shape_from_data(
             self, shape_data: dict, space: api.OpenMaya.MSpace = api.kObjectSpace, replace: bool = False,
-            maintain_colors: bool = False) -> tuple[ControlNode | None, list[api.OpenMaya.MObject | api.DagNode]]:
+            maintain_colors: bool = False,
+            maintain_line_width: bool = True) -> tuple[ControlNode | None, list[api.OpenMaya.MObject | api.DagNode]]:
         """
         Adds a new CV shape based on the given data.
 
@@ -302,14 +327,18 @@ class ControlNode(api.DagNode):
         :param api.OpenMaya.MSpace space: coordinates we want to create new curve in.
         :param bool replace: whether to replace already existing control shapes.
         :param bool maintain_colors: whether to maintain colors based on already existing shape colors.
+        :param bool maintain_line_width: whether to maintain line width based on already existing shape line width.
         :return: tuple containing the control node instance and the created shape instances.
         :rtype: tuple[ControlNode | None, list[api.OpenMaya.MObject | api.DagNode]]
         """
 
         color_data = dict()
+        shapes = self.shapes()
         if maintain_colors:
-            for shape in self.iterateShapes():
+            for shape in shapes:
                 color_data = om_nodes.node_color_data(shape.object())
+
+        line_width = shapes[0].lineWidth.value()
 
         if replace:
             self.deleteShapeNodes()
@@ -322,6 +351,9 @@ class ControlNode(api.DagNode):
                     shape.object(), color_data.get('overrideColorRGB'),
                     outliner_color=color_data.get('outlinerColor'),
                     use_outliner_color=color_data.get('useOutlinerColor', False))
+
+        if maintain_line_width:
+            self.set_line_width(line_width)
 
         return self, shapes
 
@@ -367,10 +399,136 @@ class ControlNode(api.DagNode):
                 if source is not None:
                     yield source
 
+    def lock_attributes(self, exclude_attributes: str | list[str, ...] | None = None, channel_box: bool = False):
+        """
+        Lock control transform attributes.
+
+        :param str or list[str, ...] or None exclude_attributes: optional list of attributes to exclude.
+        :param bool channel_box: whether to remove attributes from channel box.
+        """
+
+        to_lock = ['tx', 'ty', 'tz', 'rx', 'ry', 'rz', 'sx', 'sy', 'sz', 'v']
+        exclude_attributes = [] if exclude_attributes is None else exclude_attributes
+        for attr in exclude_attributes:
+            if attr in list('trs'):
+                for axis in 'xyz':
+                    to_lock.remove(attr + axis)
+
+        attributes.lock(self, to_lock, channel_box=channel_box)
+
+    def set_color(self, color: int | str | Iterable[float, float, float]):
+        """
+        Sets the color of the control curve shape.
+
+        :param int or str or Iterable[float, float, float] color: control shapes color to set.
+        """
+
+        if helpers.is_string(color):
+            color = consts.ColorIndex.index_to_rgb(consts.ColorIndex[color.lower()].value)
+
+        self.setShapeColor(color, shape_index=-1)
+
+    def set_outliner_color(self, color: int | str | Iterable[float, float, float]):
+        """
+        Sets the color of the node within outliner panel.
+
+        :param int or str or Iterable[float, float, float] color: outliner color to set.
+        """
+
+        outliner.set_color(self, color)
+
+    def set_line_width(self, value: float):
+        """
+        Sets the line width of the control shapes.
+
+        :param float value: line width value.
+        """
+
+        for shape in self.iterateShapes():
+            shape.lineWidth.set(value)
+
+    def move_shapes(self, vector: api.Vector):
+        """
+        Moves the control shapes.
+
+        :param api.Vector vector: vector to move shapes with.
+        """
+
+        for shape in self.iterateShapes():
+            cmds.move(*list(vector), f'{shape.fullPathName()}.cv[*]', r=True)
+
+    def scale_shapes(self, scale: float, factor: float = 1.0):
+        """
+        Scales the control shapes.
+
+        :param float scale: scale value.
+        :param float factor: scale factor.
+        """
+
+        if scale == 1.0 and factor == 1.0:
+            return
+
+        for shape in self.iterateShapes():
+            cmds.scale(
+                factor * scale, factor * scale, factor * scale, f'{shape.fullPathName()}.cv[*]', objectSpace=True)
+
+    def orient_shape(self, direction: str = 'x'):
+        """
+        Orients control shapes to match given direction axis.
+
+        :param str direction: direction axis ('x', 'y' or 'z').
+        """
+
+        if direction.lower() not in 'xyz' and direction.lower() not in ['-x', '-y', '-z']:
+            logger.exception(f'Invalid orient direction: {direction}')
+            return
+        if direction == 'y':
+            return
+
+        temp_transform = api.factory.create_dag_node('temp_transform', 'transform', parent=self)
+        for shape in self.shapes():
+            cmds.parent(shape.fullPathName(), temp_transform.fullPathName(), s=True, r=True)
+        try:
+            if direction == 'x':
+                temp_transform.rotateX.set(api.OpenMaya.MAngle(-90, api.OpenMaya.MAngle.kDegrees))
+                temp_transform.rotateY.set(api.OpenMaya.MAngle(-90, api.OpenMaya.MAngle.kDegrees))
+            elif direction == '-x':
+                temp_transform.rotateX.set(api.OpenMaya.MAngle(90, api.OpenMaya.MAngle.kDegrees))
+                temp_transform.rotateY.set(api.OpenMaya.MAngle(-90, api.OpenMaya.MAngle.kDegrees))
+            elif direction == '-y':
+                temp_transform.rotateZ.set(api.OpenMaya.MAngle(180, api.OpenMaya.MAngle.kDegrees))
+            elif direction == 'z':
+                temp_transform.rotateX.set(api.OpenMaya.MAngle(90, api.OpenMaya.MAngle.kDegrees))
+            elif direction == '-z':
+                temp_transform.rotateX.set(api.OpenMaya.MAngle(-90, api.OpenMaya.MAngle.kDegrees))
+            cmds.makeIdentity(temp_transform.fullPathName(), rotate=True, apply=True)
+        finally:
+            for shape in temp_transform.shapes():
+                cmds.parent(shape.fullPathName(), self.fullPathName(), s=True, r=True)
+            temp_transform.delete()
+
+    def rotate_shape(self, rotation: Iterable[float, float, float]):
+        """
+        Rotate control shapes with given rotation.
+
+        :param Iterable[float, float, float] rotation: iterable representing an XYZ degree rotation.
+        """
+
+        temp_transform = api.factory.create_dag_node('temp_transform', 'transform', parent=self)
+        for shape in self.shapes():
+            cmds.parent(shape.fullPathName(), temp_transform.fullPathName(), s=True, r=True)
+        try:
+            cmds.rotate(*rotation, temp_transform.fullPathName(), objectSpace=True)
+            cmds.makeIdentity(temp_transform.fullPathName(), rotate=True, apply=True)
+        finally:
+            for shape in temp_transform.shapes():
+                cmds.parent(shape.fullPathName(), self.fullPathName(), s=True, r=True)
+            temp_transform.delete()
+
 
 class InputNode(api.DagNode):
 
-    ATTRIBUTES_TO_SKIP = (consts.CRIT_ID_ATTR, api.TP_CONSTRAINTS_ATTR_NAME, consts.CRIT_IS_INPUT_ATTR)
+    ATTRIBUTES_TO_SKIP = (consts.NODDLE_ID_ATTR, api.TP_CONSTRAINTS_ATTR_NAME, consts.NODDLE_IS_INPUT_ATTR)
 
     @staticmethod
     def is_input(node: api.DGNode) -> bool:
@@ -382,7 +540,7 @@ class InputNode(api.DagNode):
         :rtype: bool
         """
 
-        return node.hasAttribute(consts.CRIT_IS_INPUT_ATTR)
+        return node.hasAttribute(consts.NODDLE_IS_INPUT_ATTR)
 
     @override(check_signature=False)
     def create(self, **kwargs):
@@ -393,8 +551,8 @@ class InputNode(api.DagNode):
         self.setRotationOrder(kwargs.get('rotateOrder', api.consts.kRotateOrder_XYZ))
         self.setTranslation(api.Vector(kwargs.get('translate', [0.0, 0.0, 0.0])), space=api.kWorldSpace)
         self.setRotation(api.Quaternion(kwargs.get('rotate', (0.0, 0.0, 0.0, 1.0))))
-        self.addAttribute(consts.CRIT_ID_ATTR, api.kMFnDataString, value=kwargs.get('id', name))
-        self.addAttribute(consts.CRIT_IS_INPUT_ATTR, api.kMFnNumericBoolean, value=True)
+        self.addAttribute(consts.NODDLE_ID_ATTR, api.kMFnDataString, value=kwargs.get('id', name))
+        self.addAttribute(consts.NODDLE_IS_INPUT_ATTR, api.kMFnNumericBoolean, value=True)
 
         return self
 
@@ -412,7 +570,8 @@ class InputNode(api.DagNode):
         children = [child.serializeFromScene(
             skip_attributes=self.ATTRIBUTES_TO_SKIP, include_connections=include_connections,
             include_attributes=include_attributes, extra_attributes_only=extra_attributes_only,
-            use_short_names=use_short_names, include_namespace=include_namespace) for child in self.iterate_child_inputs()]
+            use_short_names=use_short_names,
+            include_namespace=include_namespace) for child in self.iterate_child_inputs()]
         base_data['id'] = self.id()
         base_data['parent'] = parent_id
         base_data['children'] = children
@@ -427,7 +586,7 @@ class InputNode(api.DagNode):
         :rtype: str
         """
 
-        id_attr = self.attribute(consts.CRIT_ID_ATTR)
+        id_attr = self.attribute(consts.NODDLE_ID_ATTR)
         return id_attr.value() if id_attr is not None else ''
 
     def is_root(self) -> bool:
@@ -449,8 +608,8 @@ class InputNode(api.DagNode):
         """
 
         for parent in self.iterateParents():
-            if parent.hasAttribute(consts.CRIT_IS_INPUT_ATTR):
-                return InputNode(parent.object()), parent.attribute(consts.CRIT_ID_ATTR).value()
+            if parent.hasAttribute(consts.NODDLE_IS_INPUT_ATTR):
+                return InputNode(parent.object()), parent.attribute(consts.NODDLE_ID_ATTR).value()
 
         return None, None
 
@@ -469,8 +628,8 @@ class InputNode(api.DagNode):
                     if self.is_input(_child):
                         yield InputNode(_child.object())
                     else:
-                        for _child in _child_inputs(_child):
-                            yield _child
+                        for _sub_child in _child_inputs(_child):
+                            yield _sub_child
             else:
                 for _child in _input_node.iterateChildren(recursive=recursive, node_types=(api.kTransform,)):
                     if self.is_input(_child):
@@ -481,7 +640,7 @@ class InputNode(api.DagNode):
 
 class OutputNode(api.DagNode):
 
-    ATTRIBUTES_TO_SKIP = (consts.CRIT_ID_ATTR, api.TP_CONSTRAINTS_ATTR_NAME, consts.CRIT_IS_OUTPUT_ATTR)
+    ATTRIBUTES_TO_SKIP = (consts.NODDLE_ID_ATTR, api.TP_CONSTRAINTS_ATTR_NAME, consts.NODDLE_IS_OUTPUT_ATTR)
 
     @staticmethod
     def is_output(node: api.DGNode) -> bool:
@@ -493,7 +652,7 @@ class OutputNode(api.DagNode):
         :rtype: bool
         """
 
-        return node.hasAttribute(consts.CRIT_IS_OUTPUT_ATTR)
+        return node.hasAttribute(consts.NODDLE_IS_OUTPUT_ATTR)
 
     @override(check_signature=False)
     def create(self, **kwargs):
@@ -511,8 +670,8 @@ class OutputNode(api.DagNode):
             self.setRotation(api.Quaternion(kwargs.get('rotate', (0.0, 0.0, 0.0, 1.0))))
 
         self.setRotationOrder(kwargs.get('rotateOrder', api.consts.kRotateOrder_XYZ))
-        self.addAttribute(consts.CRIT_ID_ATTR, api.kMFnDataString, value=kwargs.get('id', name))
-        self.addAttribute(consts.CRIT_IS_OUTPUT_ATTR, api.kMFnNumericBoolean, value=True)
+        self.addAttribute(consts.NODDLE_ID_ATTR, api.kMFnDataString, value=kwargs.get('id', name))
+        self.addAttribute(consts.NODDLE_IS_OUTPUT_ATTR, api.kMFnNumericBoolean, value=True)
 
         return self
 
@@ -530,7 +689,8 @@ class OutputNode(api.DagNode):
         children = [child.serializeFromScene(
             skip_attributes=self.ATTRIBUTES_TO_SKIP, include_connections=include_connections,
             include_attributes=include_attributes, extra_attributes_only=extra_attributes_only,
-            use_short_names=use_short_names, include_namespace=include_namespace) for child in self.iterate_child_outputs()]
+            use_short_names=use_short_names,
+            include_namespace=include_namespace) for child in self.iterate_child_outputs()]
         base_data['id'] = self.id()
         base_data['parent'] = parent_id
         base_data['children'] = children
@@ -545,7 +705,7 @@ class OutputNode(api.DagNode):
         :rtype: str
         """
 
-        id_attr = self.attribute(consts.CRIT_ID_ATTR)
+        id_attr = self.attribute(consts.NODDLE_ID_ATTR)
         return id_attr.value() if id_attr is not None else ''
 
     def is_root(self) -> bool:
@@ -567,8 +727,8 @@ class OutputNode(api.DagNode):
         """
 
         for parent in self.iterateParents():
-            if parent.hasAttribute(consts.CRIT_IS_OUTPUT_ATTR):
-                return OutputNode(parent.object()), parent.attribute(consts.CRIT_ID_ATTR).value()
+            if parent.hasAttribute(consts.NODDLE_IS_OUTPUT_ATTR):
+                return OutputNode(parent.object()), parent.attribute(consts.NODDLE_ID_ATTR).value()
 
         return None, None
 
@@ -587,8 +747,8 @@ class OutputNode(api.DagNode):
                     if self.is_output(_child):
                         yield OutputNode(_child.object())
                     else:
-                        for _child in _child_outputs(_child):
-                            yield _child
+                        for _sub_child in _child_outputs(_child):
+                            yield _sub_child
             else:
                 for _child in _output_node.iterateChildren(recursive=recursive, node_types=(api.kTransform,)):
                     if self.is_output(_child):
@@ -620,7 +780,7 @@ class Joint(api.DagNode):
         self.setParent(parent)
 
         self.addAttribute(
-            consts.CRIT_ID_ATTR, api.kMFnDataString, default='', value=kwargs.get('id', ''), keyable=False,
+            consts.NODDLE_ID_ATTR, api.kMFnDataString, default='', value=kwargs.get('id', ''), keyable=False,
             channelBox=False, locked=True)
 
         self.segmentScaleCompensate.set(False)
@@ -668,7 +828,7 @@ class Joint(api.DagNode):
         :rtype: str
         """
 
-        id_attr = self.attribute(consts.CRIT_ID_ATTR)
+        id_attr = self.attribute(consts.NODDLE_ID_ATTR)
         return id_attr.value() if id_attr is not None else ''
 
     def aim_to_child(self, aim_vector: api.Vector, up_vector: api.Vector, use_joint_orient: bool = True):
@@ -690,3 +850,6 @@ class Joint(api.DagNode):
         if use_joint_orient:
             self.jointOrient.set(self.rotation())
             self.setRotation(api.Quaternion())
+
+
+

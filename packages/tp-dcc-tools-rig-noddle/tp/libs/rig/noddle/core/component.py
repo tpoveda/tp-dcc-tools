@@ -1,7 +1,9 @@
 from __future__ import annotations
 
 import copy
+import json
 import typing
+import contextlib
 from typing import Iterator, Iterable, Any
 
 from tp.core import log
@@ -14,15 +16,15 @@ from tp.common.python import profiler, decorators
 from tp.libs.rig.noddle import consts
 from tp.libs.rig.noddle.core import errors, nodes
 from tp.libs.rig.noddle.meta import layers, component as meta_component
-from tp.libs.rig.noddle.descriptors import component as descriptor_component
-from tp.libs.rig.noddle.functions import naming
+from tp.libs.rig.noddle.descriptors import nodes as descriptor_nodes, component as descriptor_component
+from tp.libs.rig.noddle.functions import naming, joints
 
 if typing.TYPE_CHECKING:
     from tp.common.naming.manager import NameManager
     from tp.libs.rig.noddle.core.rig import Rig
     from tp.libs.rig.noddle.core.config import Configuration
-    from tp.libs.rig.crit.core.namingpresets import Preset
-    from tp.libs.rig.crit.descriptors.nodes import InputDescriptor, OutputDescriptor
+    from tp.libs.rig.noddle.core.namingpresets import Preset
+    from tp.libs.rig.noddle.descriptors.nodes import InputDescriptor, OutputDescriptor
 
 logger = log.rigLogger
 
@@ -225,8 +227,7 @@ class Component:
             container.blackBox = flag
 
     @profiler.fn_timer
-    def create(
-            self, parent: layers.NoddleComponentsLayer | None = None) -> meta_component.NoddleComponent:
+    def create(self, parent: layers.NoddleComponentsLayer | None = None, **kwargs) -> meta_component.NoddleComponent:
         """
         Creates the component within current scene.
 
@@ -239,6 +240,7 @@ class Component:
         if not parent or not isinstance(parent, layers.NoddleComponentsLayer):
             parent = None
 
+        self.logger.info(f'Building ({self.side()} - {self.name()}')
         self.load_required_plugins()
 
         self.logger.debug('Creating component stub in current scene...')
@@ -262,6 +264,9 @@ class Component:
         parent_transform = parent.root_transform() if parent else None
         meta_node.create_transform(hierarchy_name, parent=parent_transform)
         self._meta = meta_node
+
+        if parent and isinstance(parent, layers.NoddleComponentsLayer):
+            meta_node.add_meta_parent(parent)
 
         return meta_node
 
@@ -315,6 +320,16 @@ class Component:
         """
 
         return self.descriptor.side
+
+    def color(self) -> list[float, float, float]:
+        """
+        Returns the color of the component based on its side.
+
+        :return: component color.
+        :rtype: list[float, float, float]
+        """
+
+        return consts.SideColor[self.side().lower()[0]].value
 
     def region(self) -> str:
         """
@@ -594,6 +609,7 @@ class Component:
             return False
 
         if parent_component is None:
+            self.remove_all_parents()
             self._meta.add_meta_parent(self.rig.components_layer())
             return True
 
@@ -793,6 +809,28 @@ class Component:
 
         return rig_layer.control_panel()
 
+    def id_mapping(self) -> dict:
+        """
+        Returns the guide ID -> layer node ID mapping acting as a lookup table.
+
+        When live linking the joints with the guides this table is used to link the correct guide transform
+        to deform joint. This table is used to figure out which joints should be deleted from the scene if the
+        guide does not exist anymore.
+
+        :return: layer ids mapping.
+        :rtype: dict
+
+        ..note:: this method can be overriden in subclasses, by default it maps the guide id as 1-1.
+        """
+
+        ids = {k.id: k.id for k in self.descriptor.guide_layer.iterate_guides(include_root=False)}
+        return {
+            consts.SKELETON_LAYER_TYPE: ids,
+            consts.INPUT_LAYER_TYPE: ids,
+            consts.OUTPUT_LAYER_TYPE: ids,
+            consts.RIG_LAYER_TYPE: ids
+        }
+
     @profiler.fn_timer
     def serialize_from_scene(self, layer_ids: Iterable[str] | None = None) -> descriptor_component.ComponentDescriptor:
         """
@@ -850,7 +888,7 @@ class Component:
         name, side = self.name(), self.side()
         name_manager = self.naming_manager()
         hierarchy_name, meta_name = naming.compose_names_for_layer(
-                self.naming_manager(), self.name(), self.side(), consts.INPUT_LAYER_TYPE)
+                self.naming_manager(), self.name(), self.side(), 'inputs')
         input_layer = self._meta.create_layer(
             consts.INPUT_LAYER_TYPE, hierarchy_name, meta_name, parent=self._meta.root_transform())
         root_transform = input_layer.root_transform()
@@ -861,10 +899,10 @@ class Component:
         descriptor = self.descriptor
         input_layer_descriptor = descriptor.input_layer
         current_inputs = {input_node.id(): input_node for input_node in input_layer.iterate_inputs()}
-        new_inputs = {}
+        new_inputs: dict[str, nodes.InputNode] = {}
         for input_descriptor in input_layer_descriptor.iterate_inputs():
             input_node = _build_input(input_descriptor)
-            new_inputs[input_node.id] = input_node
+            new_inputs[input_descriptor.id] = input_node
 
         # remove any input node that does not exist anymore
         for input_id, input_node in current_inputs.items():
@@ -913,7 +951,7 @@ class Component:
         name, side = self.name(), self.side()
         name_manager = self.naming_manager()
         hierarchy_name, meta_name = naming.compose_names_for_layer(
-                self.naming_manager(), self.name(), self.side(), consts.OUTPUT_LAYER_TYPE)
+            self.naming_manager(), self.name(), self.side(), 'outputs')
         output_layer = self._meta.create_layer(
             consts.OUTPUT_LAYER_TYPE, hierarchy_name, meta_name, parent=self._meta.root_transform())
         root_transform = output_layer.root_transform()
@@ -989,6 +1027,7 @@ class Component:
 
         return parent_node
 
+    @profiler.fn_timer
     def build_skeleton(self, parent_node: api.DagNode | None = None) -> bool:
         """
         Builds the skeleton system for this component.
@@ -1021,9 +1060,8 @@ class Component:
 
         self.logger.info('Starting skeleton building with namespace: {}'.format(self.namespace()))
         try:
-            self.setup_inputs()
             hierarchy_name, meta_name = naming.compose_names_for_layer(
-                self.naming_manager(), self.name(), self.side(), consts.SKELETON_LAYER_TYPE)
+                self.naming_manager(), self.name(), self.side(), 'skeleton')
             skeleton_layer = self._meta.create_layer(
                 consts.SKELETON_LAYER_TYPE, hierarchy_name, meta_name, parent=self._meta.root_transform())
             skeleton_layer.update_metadata(self.descriptor.skeleton_layer.get(consts.METADATA_DESCRIPTOR_KEY, []))
@@ -1033,6 +1071,7 @@ class Component:
             parent_joint = self.component_parent_joint(parent_node)
             self.pre_setup_skeleton_layer()
             self.setup_skeleton_layer(parent_joint)
+            self.setup_inputs()
             self.setup_outputs(parent_joint)
             self.blackbox = False
             self.save_descriptor(self._descriptor)
@@ -1054,13 +1093,50 @@ class Component:
         """
         Pre setup skeleton layer based on the descriptor.
 
-        For each guide in the guide layer descriptor, it checks if a matching skeleton joint exists in the skeleton
-        layer descriptor. If it does, it sets the translation, rotation and rotation order of the skeleton joint to the
-        values of the corresponding guide.
+        Tries to find the joint chain used by this component within descriptor. If it is not defined, we try to find
+        that data based on the startJoint and endJoint skeleton layer descriptor setting values. If the start and end
+        joints are defined we try to find those joints data within based on current scene joints.
         """
 
         descriptor = self.descriptor
         skeleton_layer_descriptor = descriptor.skeleton_layer
+        naming_manager = self.naming_manager()
+
+        joint_descriptors = {joint.id: joint for joint in skeleton_layer_descriptor.iterate_joints()}
+        if not joint_descriptors:
+            start_joint = skeleton_layer_descriptor.setting('startJoint').value
+            end_joint = skeleton_layer_descriptor.setting('endJoint').value or start_joint
+            joint_chain = joints.joint_chain(api.node_by_name(start_joint), api.node_by_name(end_joint))
+            joints.validate_rotations(joint_chain)
+            for joint in joint_chain:
+                data = joint.serializeFromScene()
+                joint_id = data['name'].split('|')[-1]
+                parent_id = data['parent'].split('|')[-1]
+                joint_name = naming_manager.resolve(
+                    'skinJointName',
+                    {'componentName': self.name(), 'side': self.side(), 'id': joint_id, 'type': 'joint'})
+                parent_descriptor = skeleton_layer_descriptor.joint(parent_id)
+                skeleton_layer_descriptor.add_joint(descriptor_nodes.JointDescriptor(
+                    name=joint_name, id=joint_id, type=data['type'], translate=data['translate'],
+                    rotate=data['rotate'], scale=data['scale'], rotateOrder=data['rotateOrder'],
+                    parent=parent_descriptor.id if parent_descriptor else None))
+
+    def setup_selection_set_joints(
+            self, skeleton_layer: layers.NoddleSkeletonLayer,
+            deform_joints: dict[str, nodes.Joint]) -> list[nodes.Joint]:
+        """
+        Function that handles the addition of joints into the skeleton layer deform joints selection set.
+
+        :param layers.NoddleSkeletonLayer skeleton_layer: skeleton layer instance.
+        :param dict[str, nodes.Joint] deform_joints: list of default skeleton layer bind joints.
+        :return: list of bind joints to add.
+        :rtype: list[nodes.Joint]
+        """
+
+        if deform_joints:
+            return list(deform_joints.values())
+
+        return []
 
     def setup_skeleton_layer(self, parent_joint: nodes.Joint):
         """
@@ -1074,6 +1150,71 @@ class Component:
         descriptor = self.descriptor
         skeleton_layer_descriptor = descriptor.skeleton_layer
         naming_manager = self.naming_manager()
+
+        existing_joints = {joint.id(): joint for joint in skeleton_layer.iterate_joints()}
+        new_joint_ids: dict[str, nodes.Joint] = {}
+        primary_root_joint = parent_joint or skeleton_layer.root_transform()
+
+        for joint_descriptor in skeleton_layer_descriptor.iterate_joints():
+            existing_joint = existing_joints.get(joint_descriptor.id)
+            joint_descriptor_parent = joint_descriptor.get('parent')
+            if joint_descriptor_parent is None:
+                joint_parent = primary_root_joint
+            else:
+                joint_parent = existing_joints[joint_descriptor_parent]
+            joint_name = naming_manager.resolve(
+                'skinJointName',
+                {'componentName': self.name(), 'side': self.side(), 'id': joint_descriptor.id, 'type': 'joint'})
+
+            # When we have an existing joint we need to update its transforms.
+            if existing_joint:
+                new_joint_ids[joint_descriptor.id] = existing_joint
+                existing_joint.rotateOrder.set(joint_descriptor.rotateOrder)
+                existing_joint.segmentScaleCompensate.set(0)
+                existing_joint.setParent(joint_parent)
+                existing_joint.rename(joint_name)
+                continue
+
+            new_joint = skeleton_layer.create_joint(
+                name=joint_name,
+                id=joint_descriptor.id,
+                rotateOrder=joint_descriptor.rotateOrder,
+                translate=joint_descriptor.translate,
+                rotate=joint_descriptor.rotate,
+                parent=joint_parent
+            )
+            new_joint.segmentScaleCompensate.set(False)
+            existing_joints[joint_descriptor.id] = new_joint
+            new_joint_ids[joint_descriptor.id] = new_joint
+
+        # purge any joints which were removed from the descriptor. this can happen in dynamically generated components.
+        for joint_id, existing_joint in existing_joints.items():
+            if joint_id in new_joint_ids:
+                continue
+            parent_node = existing_joint.parent()
+            for child in existing_joint.children((api.kTransform, api.kJoint)):
+                child.setParent(parent_node)
+            skeleton_layer.delete_joint(joint_id)
+
+        # Binding components deform joints to the selection set. removing anything we don't need any more
+        selection_set = skeleton_layer.selection_set()
+        if selection_set is None:
+            name = naming_manager.resolve(
+                'selectionSet', {
+                    'componentName': self.name(), 'side': self.side(), 'selectionSet': "componentDeform",
+                    'type': 'objectSet'})
+            selection_set = skeleton_layer.create_selection_set(name, parent=self.rig.meta.selection_sets()['skeleton'])
+
+        bind_joints = self.setup_selection_set_joints(skeleton_layer, new_joint_ids)
+        current_selection_set_members = selection_set.members(True)
+        to_remove = [i for i in current_selection_set_members if i not in bind_joints]
+        if to_remove:
+            selection_set.removeMembers(to_remove)
+        if bind_joints:
+            selection_set.addMembers(bind_joints)
+        # skeleton_layer.set_live_link(
+        # 	self.input_layer().setting_node(consts.NODDLE_INPUT_OFFSET_ATTR_NAME_ATTR),
+        # 	id_mapping=self.id_mapping()[consts.SKELETON_LAYER_TYPE], state=True)
 
     @profiler.fn_timer
     def build_rig(self, parent_node: api.DagNode | None = None) -> bool:
@@ -1092,6 +1233,9 @@ class Component:
         elif self.has_rig():
             self.logger.info(f'Component "{self.name()}" already have a rig, skipping the build!')
             return True
+
+        if not self.skeleton_layer():
+            self.build_skeleton()
 
         self._generate_objects_cache()
         if self.has_polished():
@@ -1125,7 +1269,7 @@ class Component:
                 container.makeCurrent(False)
                 self._build_objects_cache.clear()
 
-        return True
+        # return True
 
     def pre_setup_rig(self, parent_node: nodes.Joint | api.DagNode | None = None):
         """
@@ -1137,7 +1281,7 @@ class Component:
 
         component_name, component_side = self.name(), self.side()
         hierarchy_name, meta_name = naming.compose_names_for_layer(
-            self.naming_manager(), component_name, component_side, consts.RIG_LAYER_TYPE)
+            self.naming_manager(), component_name, component_side, 'rig')
         rig_layer = self._meta.create_layer(
             consts.RIG_LAYER_TYPE, hierarchy_name, meta_name, parent=self._meta.root_transform())
         self._build_objects_cache[layers.NoddleRigLayer.ID] = rig_layer
@@ -1202,6 +1346,15 @@ class Component:
 
         # layout_id = self.descriptor.get(consts.RIG_MARKING_MENU_DESCRIPTOR_KYE) or consts.DEFAULT_RIG_MARKING_MENU
         # components.create_triggers(rig_layer, layout_id)
+
+    def setup_space_switches(self):
+        """
+        Function that handles the creation of space switches based on component descriptor data.
+        This method is called after the rig is built.
+        """
+
+        rig = self.rig
+        rig_layer = self.rig_layer()
 
     def _descriptor_from_scene(self) -> descriptor_component.ComponentDescriptor | None:
         """

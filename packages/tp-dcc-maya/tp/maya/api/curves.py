@@ -7,7 +7,7 @@ Module that contains functions and classes related with Maya API curve nodes
 
 from __future__ import annotations
 
-from copy import copy
+import copy
 from typing import Dict
 
 import maya.cmds as cmds
@@ -287,7 +287,7 @@ def create_curve_shape(
     scale = CurveCV(scale_offset)
     order = [{'X': 0, 'Y': 1, 'Z': 2}[x] for x in axis_order]
 
-    curves_to_create = dict()
+    curves_to_create = {}
     for shape_name, shape_data in curve_data.items():
         if not isinstance(shape_data, dict):
             continue
@@ -297,14 +297,14 @@ def create_curve_shape(
             if shape_parent in curves_to_create:
                 curves_to_create[shape_parent].append(shape_name)
 
-    created_curves = list()
-    all_shapes = list()
-    created_parents = dict()
+    created_curves = []
+    all_shapes = []
+    created_parents = {}
 
     # If parent already has a shape with the same name we delete it
     # TODO: We should compare the bounding boxes of the parent shape and the new one and scale it to fit new bounding
     # TODO: box to the old one
-    parent_shapes = list()
+    parent_shapes = []
     if parent and parent != OpenMaya.MObject.kNullObj:
         parent_shapes = om_nodes.shapes(OpenMaya.MFnDagNode(parent).getPath())
 
@@ -339,30 +339,41 @@ def create_curve_shape(
     return parent, all_shapes
 
 
-def create_curve_from_points(name, points, shape_dict=None, parent=None):
+def create_curve_from_points(
+        name: str, points: list[list[float, float, float], ...], shape_dict: dict | None = None,
+        parent: OpenMaya.MObject | None = None) -> tuple[OpenMaya.MObject, tuple[OpenMaya.MObject]]:
     """
     Creates a new curve from the given points and the given data curve info
-    :param name: str
-    :param points: list(MPoint)
-    :param shape_dict: dict
+    :param str name: name of the curve to create.
+    :param list[list[float, float, float], ...] points: list of points for the curve.
+    :param dict or None shape_dict: optional shape data.
     :param parent: MObject
-    :return:
+    :return: the newly created curve transform and their shapes.
+    :rtype: tuple[OpenMaya.MObject, tuple[OpenMaya.MObject]]
     """
 
-    shape_dict = shape_dict or SHAPE_INFO
+    shape_dict = shape_dict or copy.deepcopy(SHAPE_INFO)
 
-    name = '{}Shape'.format(name)
-    degree = 3
-    total_cvs = len(points)
-    # append two zeros to the front of the knot count, so it lines up with maya specs
-    # (ncvs - deg) + 2 * deg - 1
-    knots = [0, 0] + range(total_cvs)
-    # remap the last two indices to match the third from last
-    knots[-1] = knots[len(knots) - degree]
-    knots[-2] = knots[len(knots) - degree]
+    if not name.lower().endswith('shape'):
+        name = name + 'Shape'
 
+    degree = shape_dict.get('degree', 3)
+
+    deg = shape_dict['degree']
     shape_dict['cvs'] = points
-    shape_dict['knots'] = knots
+    knots = shape_dict.get('knots')
+    if not knots:
+        if degree == 1:
+            shape_dict['knots'] = tuple(range(len(points)))
+        elif deg == 3:
+            total_cvs = len(points)
+            # append two zeros to the front of the knot count, so it lines up with maya specs
+            # (ncvs - deg) + 2 * deg - 1
+            knots = [0, 0] + list(range(total_cvs))
+            # remap the last two indices to match the third from last
+            knots[-2] = knots[len(knots) - degree]
+            knots[-1] = knots[len(knots) - degree]
+            shape_dict['knots'] = knots
 
     return create_curve_shape({name: shape_dict}, parent)
 
@@ -371,12 +382,12 @@ def _create_curve(
         shape_name, shape_data, space, curve_size, translate_offset, scale, order, color, mirror,
         parent, parent_inverse_matrix):
     new_curve = OpenMaya.MFnNurbsCurve()
-    new_shapes = list()
+    new_shapes = []
 
     # transform cvs
     curve_cvs = shape_data['cvs']
-    transformed_cvs = list()
-    cvs = [CurveCV(pt) for pt in copy(curve_cvs)]
+    transformed_cvs = []
+    cvs = [CurveCV(pt) for pt in copy.copy(curve_cvs)]
     for i, cv in enumerate(cvs):
         cv *= curve_size * scale.reorder(order)
         cv += translate_offset.reorder(order)

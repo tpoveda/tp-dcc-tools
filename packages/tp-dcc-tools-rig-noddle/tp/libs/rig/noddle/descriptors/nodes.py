@@ -9,8 +9,8 @@ from tp.common.python import helpers
 from tp.maya import api
 from tp.maya.om import utils
 
-from tp.libs.rig.crit import consts
-from tp.libs.rig.crit.descriptors import attributes
+from tp.libs.rig.noddle import consts
+from tp.libs.rig.noddle.descriptors import attributes
 
 
 class DGNodeDescriptor(helpers.ObjectDict):
@@ -50,7 +50,7 @@ class DGNodeDescriptor(helpers.ObjectDict):
         :rtype: attributes.AttributeDescriptor or None
         """
 
-        for attr in self.get('attributes', list()):
+        for attr in self.get('attributes', []):
             if attr['name'] == attribute_name:
                 return attr
 
@@ -76,9 +76,9 @@ class TransformDescriptor(DGNodeDescriptor):
 
     DEFAULTS = {
         'name': 'control',
-        'children': list(),
+        'children': [],
         'parent': None,
-        'critType': 'transform',
+        'noddleType': 'transform',
         'type': 'transform',
         'rotateOrder': 0,
         'translate': [0.0, 0.0, 0.0],
@@ -280,11 +280,11 @@ class JointDescriptor(TransformDescriptor):
     """
 
     DEFAULTS = {
-        'name': 'input',
+        'name': 'joint',
         'id': '',
-        'children': list(),
+        'children': [],
         'parent': None,
-        'critType': 'joint',
+        'noddleType': 'joint',
         'translate': [0.0, 0.0, 0.0],
         'rotate': [0.0, 0.0, 0.0, 1.0],
         'scale': [1.0, 1.0, 1.0],
@@ -301,9 +301,9 @@ class InputDescriptor(TransformDescriptor):
         'name': 'input',
         'id': '',
         'root': False,
-        'children': list(),
+        'children': [],
         'parent': None,
-        'critType': 'input',
+        'noddleType': 'input',
         'translate': [0.0, 0.0, 0.0],
         'rotate': [0.0, 0.0, 0.0, 1.0],
         'scale': [1.0, 1.0, 1.0],
@@ -320,9 +320,9 @@ class OutputDescriptor(TransformDescriptor):
         'name': 'output',
         'id': '',
         'root': False,
-        'children': list(),
+        'children': [],
         'parent': None,
-        'critType': 'output',
+        'noddleType': 'output',
         'translate': [0.0, 0.0, 0.0],
         'rotate': [0.0, 0.0, 0.0, 1.0],
         'scale': [1.0, 1.0, 1.0],
@@ -340,10 +340,10 @@ class ControlDescriptor(TransformDescriptor):
         'shape': 'circle',
         'id': 'ctrl',
         'color': (),
-        'children': list(),
+        'children': [],
         'parent': None,
-        'critType': 'control',
-        'srts': list(),
+        'noddleType': 'control',
+        'srts': [],
         'translate': [0.0, 0.0, 0.0],
         'rotate': [0.0, 0.0, 0.0, 1.0],
         'scale': [1.0, 1.0, 1.0],
@@ -351,124 +351,10 @@ class ControlDescriptor(TransformDescriptor):
     }
 
 
-class GuideDescriptor(ControlDescriptor):
-    """
-    Guide descriptor class
-    """
-
-    DEFAULTS = {
-        'id': 'GUIDE_RENAME',
-        'name': 'GUIDE_RENAME',
-        'children': list(),
-        'parent': None,
-        'critType': 'guide',
-        'type': 'transform',
-        'translate': [0.0, 0.0, 0.0],
-        'rotate': [0.0, 0.0, 0.0, 1.0],
-        'scale': [1.0, 1.0, 1.0],
-        'rotateOrder': 0,
-        'srts': list(),
-        'shape': dict(),
-        'shapeTransform': {
-            'translate': [0.0, 0.0, 0.0], 'rotate': [0.0, 0.0, 0.0, 1.0], 'scale': [1.0, 1.0, 1.0], 'rotateOrder': 0
-        },
-        'pivotColor': consts.DEFAULT_GUIDE_PIVOT_COLOR,
-        'internal': False,
-        'mirror': True,
-        'attributes': [
-            {
-                'name': consts.CRIT_AUTO_ALIGN_AIM_VECTOR_ATTR,
-                'value': consts.DEFAULT_AIM_VECTOR,
-                'default': consts.DEFAULT_AIM_VECTOR,
-                'type': api.kMFnNumeric3Float
-            },
-            {
-                'name': consts.CRIT_AUTO_ALIGN_UP_VECTOR_ATTR,
-                'value': consts.DEFAULT_UP_VECTOR,
-                'default': consts.DEFAULT_UP_VECTOR,
-                'type': api.kMFnNumeric3Float
-            }
-        ]
-    }
-
-    def update(self, other: GuideDescriptor | None = None, **kwargs):
-        """
-        Overrides update function to make sure data is converted to descriptors.
-
-        :param GuideDescriptor or None other: optional other guide descriptor to update from.
-        """
-
-        data = other or kwargs
-        self['srts'] = list(map(TransformDescriptor, data.get('srts', list())))
-        self['matrix'] = data.get('matrix', self.get('matrix'))
-        self['parent'] = data.get('parent', self.get('parent'))
-        self['shapeTransform'] = data.get('shapeTransform', self.get('shapeTransform'))
-        self['rotate'] = data.get('rotate', self.get('rotate'))
-        self['rotateOrder'] = data.get('rotateOrder', self.get('rotateOrder'))
-        self['scale'] = data.get('scale', self.get('scale'))
-        self['shape'] = data.get('shape', self.get('shape'))
-        self['shapeTransform'] = data.get('shapeTransform', self.get('shapeTransform'))
-        self['worldMatrix'] = data.get('worldMatrix', self.get('worldMatrix'))
-        self['pivotColor'] = data.get('pivotColor', self.get('pivotColor'))
-        self['pivotShape'] = data.get('pivotShape', self.get('pivotShape'))
-
-        current_attrs = self.get('attributes', list())
-        current_attrs_map = dict((i['name'], i) for i in current_attrs)
-        request_attrs = dict((i['name'], i) for i in data.get('attributes', list()))
-        children = self['children']
-        current_children = {i['id']: i for i in children}
-        for requested_child in data.get('children', list()):
-            existing_child = current_children.get(requested_child['id'])
-            if existing_child is None:
-                children.append(GuideDescriptor.deserialize(requested_child))
-            else:
-                existing_child.update(requested_child)
-        if current_attrs:
-            for merge_attr in request_attrs.values():
-                existing_attr = current_attrs_map.get(merge_attr['name'])
-                if existing_attr is None:
-                    current_attrs.append(attributes.attribute_class_for_descriptor(merge_attr))
-                else:
-                    existing_attr.update(merge_attr)
-        else:
-            current_attrs = [attributes.attribute_class_for_descriptor(i) for i in request_attrs.values()]
-        data['attributes'] = current_attrs
-        self['children'] = children
-
-    @classmethod
-    def deserialize(cls, data: GuideDescriptor, parent: GuideDescriptor | None = None) -> GuideDescriptor:
-        """
-        Given a valid descriptor dictionary recursively converts all children to descriptors and returns the
-        deserialized descriptor.
-
-        :param GuideDescriptor data: data to deserialize.
-        :param GuideDescriptor parent: optional parent guide descriptor.
-        :return: deserialized descriptor instance.
-        :rtype: GuideDescriptor
-        """
-
-        new_instance = super().deserialize(data, parent=parent)         # type: GuideDescriptor
-
-        # make sure srts are described as transform descriptor instances
-        new_instance['srts'] = list(map(TransformDescriptor, new_instance.get('srts', [])))
-
-        return new_instance
-
-    def add_srt(self, **srt_info: dict):
-        """
-        Adds new SRT data into guide descriptor.
-
-        :param dict srt_info: SRT data.
-        """
-
-        self.srts.append(TransformDescriptor(srt_info))
-
-
-CRIT_NODE_TYPES = {
+NODDLE_NODE_TYPES = {
     'transform': TransformDescriptor,
     'joint': JointDescriptor,
     'input': InputDescriptor,
     'output': OutputDescriptor,
     'control': ControlDescriptor,
-    'guide': GuideDescriptor
 }

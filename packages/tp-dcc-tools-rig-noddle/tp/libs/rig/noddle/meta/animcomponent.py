@@ -10,3 +10,5 @@ logger = log.tpLogger
 class NoddleAnimComponent(component.NoddleComponent):
 
     ID = consts.ANIM_COMPONENT_TYPE
+
+

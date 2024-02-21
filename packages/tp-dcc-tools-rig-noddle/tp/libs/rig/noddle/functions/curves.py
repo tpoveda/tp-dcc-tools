@@ -22,7 +22,7 @@ def curve_from_points(
     """
 
     points = points or []
-    knot_len = len(points) + degree -1
+    knot_len = len(points) + degree - 1
     knot_vecs = [v for v in range(knot_len)]
     new_curve = cmds.curve(n=name, p=points, d=1, k=knot_vecs)
     if degree != 1:

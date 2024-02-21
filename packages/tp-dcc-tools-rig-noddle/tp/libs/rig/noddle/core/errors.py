@@ -32,6 +32,16 @@ class NoddleMissingRootTransform(NoddleError):
         super().__init__(msg, *args, **kwargs)
 
 
+class NoddleBuildComponentUnknownError(NoddleError):
+
+    MSG = 'Unknown build component error'
+
+
+class NoddleBuildComponentGuideUnknownError(NoddleError):
+
+    MSG = 'Unknown build guide error'
+
+
 class NoddleBuildComponentSkeletonUnknownError(NoddleError):
 
     MSG = 'Unknown build skeleton error'
@@ -40,11 +50,6 @@ class NoddleBuildComponentSkeletonUnknownError(NoddleError):
 class NoddleBuildComponentRigUnknownError(NoddleError):
 
     MSG = 'Unknown build component rig error'
-
-
-class NoddleBuildComponentUnknownError(NoddleError):
-
-    MSG = 'Unknown build component error'
 
 
 class NoddleMissingComponentType(NoddleError):

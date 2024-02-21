@@ -4,8 +4,8 @@ import typing
 
 from tp.common.python import path, folder, fileio, yamlio, timedate
 
-from tp.libs.rig.noddle.utils import files
 from tp.libs.rig.noddle.interface import hud
+from tp.libs.rig.noddle.functions import files
 
 if typing.TYPE_CHECKING:
     from tp.libs.rig.noddle.core.project import Project

@@ -121,7 +121,7 @@ class HoudiniShelf(shelf.AbstractShelf, object):
                     if annotation == 'separator':
                         continue
                     dcc = i.get('dcc')
-                    if dcc.get_name() not in dcc:
+                    if dcc.name() not in dcc:
                         continue
                     icon = os.path.join(self.ICONS_PATHS, i.get('icon'))
                     command = i.get('command')

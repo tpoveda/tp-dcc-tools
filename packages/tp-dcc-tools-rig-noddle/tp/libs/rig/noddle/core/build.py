@@ -51,9 +51,10 @@ class Build:
             # create rig
             self._rig = rig.Rig(meta=existing_rig)
             self._rig.start_session(self._asset_name)
-            self._rig.setup_skeleton(root_joint)
 
+            self.pre()
             self.run()
+            self._rig.setup_skeleton(root_joint)
             # self._rig.save_bind_pose()
             self.post()
 

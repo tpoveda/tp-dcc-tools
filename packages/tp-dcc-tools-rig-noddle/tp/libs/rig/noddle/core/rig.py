@@ -2,14 +2,14 @@ from __future__ import annotations
 
 import json
 import typing
-import contextlib
 from typing import Iterator
+
+import maya.cmds as cmds
 
 from tp.core import log
 from tp.common.python import profiler
 from tp.maya import api
 from tp.maya.meta import base
-from tp.common.python import helpers
 from tp.libs.rig.noddle import consts
 from tp.libs.rig.noddle.meta import rig as meta_rig
 from tp.libs.rig.noddle.core import errors, config, component
@@ -24,109 +24,6 @@ if typing.TYPE_CHECKING:
     from tp.libs.rig.noddle.descriptors.component import ComponentDescriptor
 
 logger = log.rigLogger
-
-
-def iterate_scene_rig_meta_nodes() -> Iterator[NoddleRig]:
-    """
-    Generator function that iterates over all rig meta node instances within the current scene.
-
-    :return: iterated scene rig meta node instances.
-    :rtype: Iterator[NoddleRig]
-    """
-
-    for found_meta_rig in base.find_meta_nodes_by_class_type(consts.RIG_TYPE):
-        yield found_meta_rig
-
-
-def iterate_scene_rigs() -> Iterator[Rig]:
-    """
-    Generator function that iterates over all rig instances within the current scene.
-
-    :return: iterated scene rig instances.
-    :rtype: Iterator[Rig]
-    """
-
-    for meta_rig in iterate_scene_rig_meta_nodes():
-        rig_instance = Rig(meta=meta_rig)
-        rig_instance.start_session()
-        yield rig_instance
-
-
-def root_by_rig_name(name: str, namespace: str | None = None) -> NoddleRig | None:
-    """
-    Finds the root meta with the given name in the "name" attribute.
-
-    :param str name: rig name to find meta node rig instance.
-    :param str or None namespace: optional valid namespace to search for the rig meta node instance.
-    :return: found root meta node instance with given name.
-    :rtype: NoddleRig or None
-    """
-
-    meta_rigs: list[NoddleRig] = []
-    meta_rig_names: list[str] = []
-
-    found_meta_rig = None
-    for meta_node in iterate_scene_rig_meta_nodes():
-        meta_rigs.append(meta_node)
-        meta_rig_names.append(meta_node.attribute(consts.NODDLE_NAME_ATTR).value())
-    if not meta_rigs:
-        return None
-    if not namespace:
-        dupes = helpers.duplicates_in_list(meta_rig_names)
-        if dupes:
-            raise errors.NoddleRigDuplicationError(dupes)
-        for meta_rig in meta_rigs:
-            if meta_rig.attribute(consts.NODDLE_NAME_ATTR).value() == name:
-                return meta_rig
-    if found_meta_rig is None and namespace:
-        namespace = namespace if namespace.startswith(':') else f':{namespace}'
-        for meta_rig in meta_rigs:
-            rig_namespace = meta_rig.namespace()
-            if rig_namespace == namespace and meta_rig.attribute(consts.NODDLE_NAME_ATTR).value() == name:
-                found_meta_rig = meta_rig
-                break
-
-    return found_meta_rig
-
-
-def rig_from_node(node: api.DGNode) -> Rig | None:
-    """
-    Returns rig from given node.
-
-    :param DGNode node: scene node to find rig from.
-    :return: found rig.
-    :rtype: Rig or None
-    :raises errors.CritMissingMetaNode: if given node is not attached to a meta node.
-    :raises errors.CritMissingMetaNode: if attached meta node is not a valid Noddle meta node instance.
-    """
-
-    meta_nodes = base.connected_meta_nodes(node)
-    if not meta_nodes:
-        raise errors.NoddleMissingMetaNode(f'No meta node attached to node: {node}')
-    try:
-        return parent_rig(meta_nodes[0])
-    except AttributeError:
-        raise errors.NoddleMissingMetaNode(f'Attached meta node is not a valid Noddle node')
-
-
-def parent_rig(meta_node: base.MetaBase) -> Rig | None:
-    """
-    Returns the meta node representing the parent rig of the given meta node instance.
-
-    :param base.MetaBase meta_node: meta base class to get rig of.
-    :return: rig instance found to be the parent of the given meta node instance.
-    :rtype: Rig or None
-    """
-
-    found_rig = None
-    for parent in meta_node.iterate_meta_parents(recursive=True):
-        crit_root_attr = parent.attribute(consts.NODDLE_IS_ROOT_ATTR)
-        if crit_root_attr and crit_root_attr.value():
-            found_rig = Rig(meta=parent)
-            found_rig.start_session()
-            break
-
-    return found_rig
 
 
 class Rig:
@@ -203,9 +100,11 @@ class Rig:
         :rtype: rig.NoddleRig
         """
 
+        from tp.libs.rig.noddle.functions import rigs
+
         meta = self._meta
         if meta is None:
-            meta = root_by_rig_name(name=name, namespace=namespace)
+            meta = rigs.root_by_rig_name(name=name, namespace=namespace)
         if meta is not None:
             self._meta = meta
             logger.info(f'Found rig in scene, initializing rig "{self.name()}" for session')
@@ -240,6 +139,23 @@ class Rig:
 
         return {}
 
+    @profiler.fn_timer
+    def save_configuration(self) -> dict:
+        """
+        Serializes and saves the configuration for this rig on the meta node instance.
+
+        :return: saved serialized configuration.
+        :rtype: dict
+        """
+
+        logger.debug('Saving CRIT rig configuration.')
+        config_data = self.configuration.serialize(rig=self)
+        if config_data:
+            config_plug = self._meta.attribute(consts.NODDLE_RIG_CONFIG_ATTR)
+            config_plug.set(json.dumps(config_data))
+
+        return config_data
+
     def naming_manager(self) -> NameManager:
         """
         Returns the naming manager for the current rig instance.
@@ -271,8 +187,7 @@ class Rig:
         components_layer = self.components_layer()
         if not components_layer:
             name_manager = self.naming_manager()
-            hierarchy_name, meta_name = naming.compose_rig_names_for_layer(
-                name_manager, self.name(), consts.COMPONENTS_LAYER_TYPE)
+            hierarchy_name, meta_name = naming.compose_rig_names_for_layer(name_manager, self.name(), 'components')
             components_layer = self._meta.create_layer(
                 consts.COMPONENTS_LAYER_TYPE, hierarchy_name=hierarchy_name, meta_name=meta_name,
                 parent=self._meta.root_transform())
@@ -300,8 +215,7 @@ class Rig:
         skeleton_layer = self.skeleton_layer()
         if not skeleton_layer:
             name_manager = self.naming_manager()
-            hierarchy_name, meta_name = naming.compose_rig_names_for_layer(
-                name_manager, self.name(), consts.SKELETON_LAYER_TYPE)
+            hierarchy_name, meta_name = naming.compose_rig_names_for_layer(name_manager, self.name(), 'skeleton')
             skeleton_layer = self._meta.create_layer(
                 consts.SKELETON_LAYER_TYPE, hierarchy_name=hierarchy_name, meta_name=meta_name,
                 parent=self._meta.root_transform())
@@ -329,13 +243,43 @@ class Rig:
         geometry_layer = self.geometry_layer()
         if not geometry_layer:
             name_manager = self.naming_manager()
-            hierarchy_name, meta_name = naming.compose_rig_names_for_layer(
-                name_manager, self.name(), consts.GEOMETRY_LAYER_TYPE)
+            hierarchy_name, meta_name = naming.compose_rig_names_for_layer(name_manager, self.name(), 'geometry')
             geometry_layer = self._meta.create_layer(
                 consts.GEOMETRY_LAYER_TYPE, hierarchy_name=hierarchy_name, meta_name=meta_name,
                 parent=self._meta.root_transform())
 
         return geometry_layer
+
+    def size(self, axis: str = 'y') -> float:
+        """
+        Returns the size of the rig based on the bounding box of the geometry group.
+
+        :param str axis: axis to get size from.
+        :return: rig size.
+        :rtype: float
+        """
+
+        geometry_layer = self.geometry_layer()
+        if not geometry_layer:
+            return 0.0
+
+        bounding_box = cmds.exactWorldBoundingBox(self.geometry_layer().root_transform().fullPathName())
+        if axis == 'x':
+            return bounding_box[3] - bounding_box[0]
+        elif axis == 'y':
+            return bounding_box[4] - bounding_box[1]
+        elif axis == 'z':
+            return bounding_box[5] - bounding_box[2]
+
+    def clamped_size(self) -> float:
+        """
+        Returns the clamped size of the rig based on the bounding box of the geometry group.
+
+        :return: rig clamped size.
+        :rtype: float
+        """
+
+        return max(self.size('y') * 0.3, self.size('x') * 0.3)
 
     @profiler.fn_timer
     def create_component(
@@ -351,7 +295,7 @@ class Rig:
         :param ComponentDescriptor descriptor: optional component descriptor.
         :return: new instance of the created component.
         :rtype: Component
-        :raises errors.CritMissingComponentType: if not component with given type is registered.
+        :raises errors.NoddleMissingComponentType: if not component with given type is registered.
         """
 
         if descriptor:
@@ -524,13 +468,37 @@ class Rig:
 
         self._components_cache.clear()
 
+    def build_state(self) -> int:
+        """
+        Returns the current build state which is determined by the very first component.
+
+        :return: build state constant.
+        :rtype: int
+        """
+
+        for found_component in self.iterate_components():
+            if found_component.has_polished():
+                return consts.POLISH_STATE
+            elif found_component.has_rig():
+                return consts.RIG_STATE
+            elif found_component.has_skeleton():
+                return consts.SKELETON_STATE
+            break
+
+        return consts.NOT_BUILT_STATE
+
     @profiler.fn_timer
-    def setup_skeleton(self, root_joint: api.Joint):
+    def setup_skeleton(self, root_joint: api.Joint, components_to_build: list[Component] | None = None) -> bool:
         """
         Setup rig skeleton based on the given root joint.
 
         :param api.Joint root_joint: skeleton root joint.
+        :param  list[Component] or None components_to_build: optional list of components to build skeleton for.
+        :return: True if the build skeleton operation was successful; False otherwise.
+        :rtype: bool
         """
+
+        self._config.update_from_rig(self)
 
         skeleton_layer = self.get_or_create_skeleton_layer()
         if root_joint not in skeleton_layer.joints():
@@ -548,30 +516,28 @@ class Rig:
 
         self._meta.create_selection_sets(self.naming_manager())
 
-    # @profiler.profile_it('~/tp/preferences/logs/crit/build_skeleton.profile')
-    @profiler.fn_timer
-    def build_skeleton(self, components_to_build: list[Component] | None = None) -> bool:
-        """
-        Builds skeleton for the given components. If not given, all initialized components skeletons will be built.
-
-        :param  list[Component] or None components_to_build: optional list of components to build skeleton for.
-        :return: True if the build skeleton operation was successful; False otherwise.
-        :rtype: bool
-        """
-
-        self._config.update_from_rig(self)
         child_parent_relationship = {_component: _component.parent() for _component in self.iterate_components()}
         components_to_build = components_to_build or list(child_parent_relationship.keys())
-
-        parent_node = self.get_or_create_skeleton_layer().root_transform()
-        parent_node.show()
-        self.get_or_create_geometry_layer()
-
-        self._meta.create_selection_sets(self.naming_manager())
         self._build_components(
             components_to_build, child_parent_relationship, 'build_skeleton', parent_node=parent_node)
 
         return True
+
+    def attach_to_skeleton(self):
+        """
+        Attachs rig animation components into the rig skeleton.
+        """
+
+        for found_component in self.iterate_components():
+            found_component.attach_to_skeleton()
+
+    def detach_from_skeleton(self):
+        """
+        Detaches rig animation components into the rig skeleton.
+        """
+
+        for found_component in self.iterate_components():
+            found_component.detach_from_skeleton()
 
     # @profiler.profile_it('~/tp/preferences/logs/noddle/build_rigs.profile')
     @profiler.fn_timer
@@ -589,8 +555,12 @@ class Rig:
         child_parent_relationship = {_component: _component.parent() for _component in self.iterate_components()}
         components_to_build = components_to_build or list(child_parent_relationship.keys())
 
+        if not any(comp.has_skeleton() for comp in components_to_build):
+            raise errors.NoddleError('Some of the components has no skeleton')
+
         success = self._build_components(
             components_to_build, child_parent_relationship, 'build_rig', parent_node=None)
+        components.setup_space_switches(components_to_build)
         if success:
             self._handle_control_display_layer(components_to_build)
             return True

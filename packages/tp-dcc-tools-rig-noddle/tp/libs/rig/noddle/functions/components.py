@@ -2,14 +2,21 @@ from __future__ import annotations
 
 import typing
 
+from tp.core import log
 from tp.maya import api
 from tp.maya.meta import base
+from tp.maya.libs.triggers import api as triggers
+
 from tp.libs.rig.noddle import consts
+from tp.libs.rig.noddle.core import errors
 
 if typing.TYPE_CHECKING:
     from tp.libs.rig.crit.core.rig import Rig
     from tp.libs.rig.crit.core.component import Component
     from tp.libs.rig.crit.meta.component import CritComponent
+
+
+logger = log.rigLogger
 
 
 def component_from_node(node: api.DGNode, rig: Rig | None = None) -> Component | None:
@@ -25,9 +32,9 @@ def component_from_node(node: api.DGNode, rig: Rig | None = None) -> Component |
     """
 
     # Import here to avoid cyclic imports
-    from tp.libs.rig.noddle.core import errors, rig as core_rig
+    from tp.libs.rig.noddle.functions import rigs
 
-    rig = rig or core_rig.rig_from_node(node)
+    rig = rig or rigs.rig_from_node(node)
     if not rig:
         raise errors.NoddleMissingRigForNode(node.fullPathName())
 
@@ -89,3 +96,67 @@ def component_meta_node_from_node(node: api.DGNode) -> CritComponent | base.Meta
             return meta_parent
 
     return None
+
+
+def create_triggers(node: api.DGNode, layout_id: str):
+    """
+    Creates contextual menu trigger into given node and attaches the given contextual menu layout ID to it.
+
+    :param api.DGNode node: node to attach contextual menu trigger to.
+    :param str layout_id: ID of the contextual menu layout to set.
+    """
+
+    found_trigger = triggers.as_trigger_node(node)
+    if found_trigger is not None:
+        found_trigger.delete_triggers()
+
+    new_trigger = triggers.create_trigger_for_node(node, 'triggerMenu')
+    new_trigger.command.set_menu(layout_id)
+
+
+def setup_space_switches(components: list[Component]):
+    """
+    Loops over given components and setup space switches.
+
+    :param list[Component] components: list of components to set up space switches for.
+    """
+
+    for component in components:
+        with api.namespace_context(component.namespace()):
+            container = component.container()
+            if container is not None:
+                container.makeCurrent(True)
+            try:
+                component.setup_space_switches()
+            finally:
+                if container is not None:
+                    container.makeCurrent(False)
+
+
+def cleanup_space_switches(rig: Rig, component: Component):
+    """
+    Removes all space switch drivers which use the given component as a driver.
+
+    :param Rig rig: rig component belongs to.
+    :param Component component: component instance which will be deleted.
+    """
+
+    logger.debug('Updating space switching.')
+
+    old_token = component.serialized_token_key()
+    for found_component in rig.iterate_components():
+        if found_component == component:
+            continue
+        requires_save = False
+        for space in found_component.descriptor.space_switching:
+            new_drivers = []
+            for driver in list(space.drivers):
+                driver_name = driver.driver
+                if old_token not in driver_name:
+                    new_drivers.append(driver)
+                else:
+                    requires_save = True
+            space.drivers = new_drivers
+
+        if requires_save:
+            found_component.save_descriptor(found_component.descriptor)

@@ -103,6 +103,6 @@ def new_versioned_file(
 
 	files_dict = versioned_files(directory, extension=extension, split_char=split_char)
 	new_version = int(files_dict[name][-1].split(split_char)[-2]) + 1 if name in files_dict else 0
-	new_file_name = f'{name}{split_char}{str(new_version).zfill(4)}{extension}'
+	new_file_name = f'{name}{split_char}{str(new_version).zfill(4)}{split_char}{extension}'
 
 	return new_file_name if not full_path else path.join_path(directory, new_file_name)

@@ -62,6 +62,11 @@ NODDLE_CONTROL_SELECTION_SET_ATTR = 'noddleControlSelectionSet'
 NODDLE_JOINT_SELECTION_SET_ATTR = 'noddleJointSelectionSet'
 NODDLE_SKELETON_SELECTION_SET_ATTR = 'noddleSkeletonSelectionSet'
 NODDLE_EXTRA_NODES_ATTR = 'noddleExtraNodes'
+NODDLE_CONNECTOR_ATTR = 'noddleConnector'
+NODDLE_CONNECTORS_ATTR = 'noddleConnectors'
+NODDLE_CONNECTOR_START_ATTR = 'noddleConnectorStart'
+NODDLE_CONNECTOR_END_ATTR = 'noddleConnectorEnd'
+NODDLE_CONNECTOR_ATTRIBUTE_HOLDER_ATTR = 'noddleConnectorAttrHolder'
 NODDLE_SETTING_NODES_ATTR = 'noddleSettingNodes'
 NODDLE_SETTING_NODE_ATTR = 'noddleSettingNode'
 NODDLE_SETTING_NAME_ATTR = 'noddleSettingName'
@@ -101,6 +106,11 @@ NODDLE_CONTAINER_ATTR = 'noddleContainer'
 NODDLE_HAS_SKELETON_ATTR = 'noddleHasSkeleton'
 NODDLE_HAS_POLISHED_ATTR = 'noddleHasPolished'
 NODDLE_HAS_RIG_ATTR = 'noddleHasRig'
+NODDLE_REQUIRES_PIVOT_SHAPE_ATTR = 'noddleRequiresPivotShape'
+NODDLE_PIVOT_COLOR_ATTR = 'noddlePivotColor'
+NODDLE_PIVOT_SHAPE_ATTR = 'noddlePivotShape'
+NODDLE_PIVOT_NODE_ATTR = 'noddlePivotNode'
+NODDLE_DISPLAY_AXIS_SHAPE_ATTR = 'noddleDisplayAxisShape'
 NODDLE_COMPONENT_GROUP_ATTR = 'noddleComponentGroup'
 NODDLE_COMPONENT_DESCRIPTOR_ATTR = 'noddleComponentDescriptor'
 NODDLE_COMPONENT_GROUPS_ATTR = 'noddleComponentGroups'
@@ -125,7 +135,7 @@ NODDLE_DESCRIPTOR_CACHE_OUTPUT_DAG_ATTR = 'noddleDescriptorCacheOutputLayerDag'
 NODDLE_DESCRIPTOR_CACHE_OUTPUT_SETTINGS_ATTR = 'noddleDescriptorCacheOutputLayerSettings'
 NODDLE_DESCRIPTOR_CACHE_OUTPUT_METADATA_ATTR = 'noddleDescriptorCacheOutputLayerMetadata'
 NODDLE_DESCRIPTOR_CACHE_RIG_DAG_ATTR = 'noddleDescriptorCacheRigLayerDag'
-NODDLE_DESCRIPTOR_CACHE_RIG_DG_ATTR = 'noddleDescriptorCacheGuideLayerDg'
+NODDLE_DESCRIPTOR_CACHE_RIG_DG_ATTR = 'noddleDescriptorCacheRigLayerDg'
 NODDLE_DESCRIPTOR_CACHE_RIG_SETTINGS_ATTR = 'noddleDescriptorCacheRigLayerSettings'
 NODDLE_DESCRIPTOR_CACHE_RIG_METADATA_ATTR = 'noddleDescriptorCacheRigLayerMetadata'
 NODDLE_DESCRIPTOR_CACHE_SPACE_SWITCHING_ATTR = 'noddleDescriptorCacheSpaceSwitching'
@@ -146,6 +156,15 @@ NODDLE_DESCRIPTOR_CACHE_ATTR_NAMES = (
     NODDLE_DESCRIPTOR_CACHE_RIG_METADATA_ATTR,
     NODDLE_DESCRIPTOR_CACHE_SPACE_SWITCHING_ATTR
 )
+
+# ======================================================================================================================
+# Descriptor attribute expression constants
+# ======================================================================================================================
+
+NODDLE_DESCRIPTOR_ATTR_EXPR_SELF_TOKEN = '@{self}'
+NODDLE_DESCRIPTOR_ATTR_EXPR_INHERIT_TOKEN = '@{inherit}'
+NODDLE_DESCRIPTOR_ATTR_EXPR_REGEX_PATTERN = r'(?:\@{(.*)\})'
+
 
 # ======================================================================================================================
 # Non Publishable Attributes
@@ -175,6 +194,7 @@ TYPE_DESCRIPTOR_KEY = 'type'
 ENABLED_DESCRIPTOR_KEY = 'enabled'
 METADATA_DESCRIPTOR_KEY = 'metadata'
 NAMING_PRESET_DESCRIPTOR_KEY = 'namingPreset'
+SPACE_SWITCH_DESCRIPTOR_KEY = 'spaceSwitching'
 INPUT_LAYER_DESCRIPTOR_KEY = 'inputLayer'
 OUTPUT_LAYER_DESCRIPTOR_KEY = 'outputLayer'
 RIG_LAYER_DESCRIPTOR_KEY = 'rigLayer'
@@ -182,8 +202,8 @@ SKELETON_LAYER_DESCRIPTOR_KEY = 'skeletonLayer'
 SKELETON_MARKING_MENU_DESCRIPTOR_KEY = 'markingMenuSkeleton'
 RIG_MARKING_MENU_DESCRIPTOR_KYE = 'markingMenuRig'
 ANIM_MARKING_MENU_DESCRIPTOR_KEY = 'markingMenuAnim'
-DEFAULT_SKELETON_MARKING_MENU = 'critDefaultSkeletonMenu'
-DEFAULT_RIG_MARKING_MENU = 'critDefaultRigMenu'
+DEFAULT_SKELETON_MARKING_MENU = 'noddleDefaultSkeletonMenu'
+DEFAULT_RIG_MARKING_MENU = 'noddleDefaultRigMenu'
 LAYER_DESCRIPTOR_KEYS = (
     INPUT_LAYER_DESCRIPTOR_KEY,
     OUTPUT_LAYER_DESCRIPTOR_KEY,
@@ -362,7 +382,7 @@ class ColorIndex(enum.Enum):
                      "(0.6299999952316284, 0.1889999955892563, 0.41391000151634216)": 31}
 
     @classmethod
-    def index_to_rgb(cls, index: int):
+    def index_to_rgb(cls, index: int) -> list[float, float, float]:
         if index == 0:
             index = 5
         return cls._rgb_lookup.value[index]
@@ -375,6 +395,7 @@ class ColorIndex(enum.Enum):
 
 class SideColor(enum.Enum):
     c = ColorIndex.index_to_rgb(ColorIndex.yellow.value)
+    m = ColorIndex.index_to_rgb(ColorIndex.yellow.value)
     l = ColorIndex.index_to_rgb(ColorIndex.blue.value)
     r = ColorIndex.index_to_rgb(ColorIndex.red.value)
 

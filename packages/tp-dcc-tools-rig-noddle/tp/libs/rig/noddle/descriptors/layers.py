@@ -1,13 +1,13 @@
 from __future__ import annotations
 
-from typing import Tuple, List, Iterator, Dict, Any
+from typing import Iterator, Any
 
 from overrides import override
 
 from tp.common.python import helpers
 
-from tp.libs.rig.crit import consts
-from tp.libs.rig.crit.descriptors import nodes, attributes, graphs
+from tp.libs.rig.noddle import consts
+from tp.libs.rig.noddle.descriptors import nodes, attributes, graphs
 
 
 def traverse_descriptor_layer_dag(layer_descriptor: LayerDescriptor) -> Iterator:
@@ -39,12 +39,12 @@ class LayerDescriptor(helpers.ObjectDict):
     """
 
     @classmethod
-    def from_data(cls, layer_data: Dict) -> LayerDescriptor:
+    def from_data(cls, layer_data: dict) -> LayerDescriptor:
         """
         Transforms given data to valid descriptor instances and returns an instance of this layer descriptor based on
         given data.
 
-        :param Dict layer_data: layer dictionary data.
+        :param dict layer_data: layer dictionary data.
         :return: new layer descriptor instance.
         :rtype: LayerDescriptor
         """
@@ -89,12 +89,12 @@ class LayerDescriptor(helpers.ObjectDict):
                 continue
             yield found_node
 
-    def find_nodes(self, *node_ids: Tuple) -> List[nodes.TransformDescriptor | None]:
+    def find_nodes(self, *node_ids: tuple) -> list[nodes.TransformDescriptor | None]:
         """
         Loops through all nodes within this layer and returns a list with found nodes.
 
-        :param Tuple[str] node_ids: list of node IDs to search.
-        :return: List[nodes.TransformDescriptor or None]
+        :param tuple[str] node_ids: list of node IDs to search.
+        :return: list[nodes.TransformDescriptor or None]
         """
 
         results = [None] * len(node_ids)
@@ -104,6 +104,38 @@ class LayerDescriptor(helpers.ObjectDict):
                 results[node_ids.index(node_id)] = found_node
 
         return results
+
+    def setting(self, name: str) -> attributes.AttributeDescriptor | None:
+        """
+        Returns the attribute descriptor instance attached to the node with and with the given name.
+
+        :param str name: name of the setting to get descriptor of.
+        :return: attribute descriptor instance.
+        :rtype: attributes.AttributeDescriptor or None
+        """
+
+        found_descriptor = None
+        try:
+            for i in iter(self.get(consts.SETTINGS_DESCRIPTOR_KEY, [])):
+                if i.name == name:
+                    found_descriptor = i
+                    break
+        except KeyError:
+            return None
+
+        return found_descriptor
+
+    def set_setting_value(self, name: str, value: Any):
+        """
+        Sets the value for setting.
+
+        :param str name: name of the setting to set value for.
+        :param Any value: setting value.
+        """
+
+        found_setting = self.setting(name)
+        if found_setting:
+            found_setting.value = value
 
 
 class InputLayerDescriptor(LayerDescriptor):
@@ -160,11 +192,11 @@ class InputLayerDescriptor(LayerDescriptor):
 
         return found_input_descriptor
 
-    def create_input(self, **data: Dict) -> nodes.InputDescriptor:
+    def create_input(self, **data: dict) -> nodes.InputDescriptor:
         """
         Creates a new input descriptor from given data and adds it into this layer descriptor.
 
-        :param Dict data: input descriptor data.
+        :param dict data: input descriptor data.
         :return: newly created input descriptor instance.
         :rtype: nodes.InputDescriptor
         """
@@ -267,11 +299,10 @@ class OutputLayerDescriptor(LayerDescriptor):
 
         return found_output_descriptor
 
-    def create_output(self, **data: Dict) -> nodes.OutputDescriptor:
+    def create_output(self, **data) -> nodes.OutputDescriptor:
         """
         Creates a new output descriptor from given data and adds it into this layer descriptor.
 
-        :param Dict data: output descriptor data.
         :return: newly created output descriptor instance.
         :rtype: nodes.OutputDescriptor
         """
@@ -317,7 +348,7 @@ class SkeletonLayerDescriptor(LayerDescriptor):
 
     @classmethod
     @override
-    def from_data(cls, layer_data: Dict) -> LayerDescriptor:
+    def from_data(cls, layer_data: dict) -> LayerDescriptor:
 
         data = {
             consts.SETTINGS_DESCRIPTOR_KEY: list(map(
@@ -329,7 +360,7 @@ class SkeletonLayerDescriptor(LayerDescriptor):
         return cls(data)
 
     @override(check_signature=False)
-    def update(self, kwargs: Dict):
+    def update(self, kwargs: dict):
 
         self[consts.SETTINGS_DESCRIPTOR_KEY] = list(
             map(attributes.attribute_class_for_descriptor, kwargs.get(consts.SETTINGS_DESCRIPTOR_KEY, []))) or self[
@@ -337,6 +368,16 @@ class SkeletonLayerDescriptor(LayerDescriptor):
         skeleton_layer_info = kwargs.get(consts.DAG_DESCRIPTOR_KEY)
         if skeleton_layer_info:
             self[consts.DAG_DESCRIPTOR_KEY] = list(map(nodes.JointDescriptor.deserialize, iter(skeleton_layer_info)))
+
+    def has_joints(self) -> bool:
+        """
+        Returns whether this layer contain joint descriptors.
+
+        :return: True if joint descriptors are defined for this layer; False otherwise.
+        :rtype: bool
+        """
+
+        return bool(self.joints())
 
     def joint(self, joint_id: str) -> nodes.JointDescriptor | None:
         """
@@ -348,18 +389,18 @@ class SkeletonLayerDescriptor(LayerDescriptor):
         """
 
         found_joint_descriptor = None
-        for joint_descriptor in self.iterate_deform_joints():
+        for joint_descriptor in self.iterate_joints():
             if joint_descriptor.id == joint_id:
                 found_joint_descriptor = joint_descriptor
                 break
 
         return found_joint_descriptor
 
-    def iterate_deform_joints(self) -> Iterator[nodes.JointDescriptor]:
+    def iterate_joints(self) -> Iterator[nodes.JointDescriptor]:
         """
-        Generator function that iterates over all deform joints defined within this skeleton descriptor layer.
+        Generator function that iterates over all joints defined within this skeleton descriptor layer.
 
-        :return: iterated skeleton deform descriptor joints.
+        :return: iterated skeleton descriptor joints.
         :rtype: terator[nodes.JointDescriptor]
         """
 
@@ -368,7 +409,17 @@ class SkeletonLayerDescriptor(LayerDescriptor):
             for child in joint_descriptor.iterate_children():
                 yield child
 
-    def find_joints(self, *ids: Tuple[str]) -> List[nodes.JointDescriptor | None]:
+    def joints(self) -> list[nodes.JointDescriptor]:
+        """
+        Returns list of all joints defined within this skeleton descriptor layer.
+
+        :return: list of skeleton descriptor joints.
+        :rtype: list[nodes.JointDescriptor]
+        """
+
+        return list(self.iterate_joints())
+
+    def find_joints(self, *ids: tuple[str]) -> list[nodes.JointDescriptor | None]:
         """
         Returns the joint descriptor instances from given IDs.
 
@@ -378,14 +429,14 @@ class SkeletonLayerDescriptor(LayerDescriptor):
         """
 
         found_joint_descriptors = [None] * len(ids)
-        for joint_descriptor in self.iterate_deform_joints():
+        for joint_descriptor in self.iterate_joints():
             joint_id = joint_descriptor.id
             if joint_id in ids:
                 found_joint_descriptors[ids.index(joint_id)] = joint_descriptor
 
         return found_joint_descriptors
 
-    def create_joint(self, **data: Dict) -> nodes.JointDescriptor:
+    def create_joint(self, **data: dict) -> nodes.JointDescriptor:
         """
         Creates a new joint descriptor based on given data.
 
@@ -426,20 +477,20 @@ class SkeletonLayerDescriptor(LayerDescriptor):
             self[consts.DAG_DESCRIPTOR_KEY].append(joint_descriptor)
             return
 
-        for _joint_descriptor in self.iterate_deform_joints():
+        for _joint_descriptor in self.iterate_joints():
             if _joint_descriptor.id == joint_descriptor.parent:
                 _joint_descriptor.children.append(joint_descriptor)
                 break
 
-    def delete_joints(self, *joints_ids: Tuple[str]):
+    def delete_joints(self, *joints_ids: tuple[str]):
         """
         Deletes joint descriptors that matches given IDs.
 
-        :param Tuple[str] joints_ids: joint IDs to delete.
+        :param tuple[str] joints_ids: joint IDs to delete.
         """
 
         top_level_nodes_to_delete = []
-        for joint_descriptor in self.iterate_deform_joints():
+        for joint_descriptor in self.iterate_joints():
             if joint_descriptor.id not in joints_ids:
                 continue
             elif joint_descriptor.parent is None:
@@ -463,18 +514,21 @@ class RigLayerDescriptor(LayerDescriptor):
 
     @classmethod
     @override
-    def from_data(cls, layer_data: Dict) -> LayerDescriptor:
+    def from_data(cls, layer_data: dict) -> LayerDescriptor:
 
         data = {
-            consts.DAG_DESCRIPTOR_KEY: [nodes.ControlDescriptor.deserialize(i) for i in iter(layer_data.get(consts.DAG_DESCRIPTOR_KEY, []))],
-            consts.SETTINGS_DESCRIPTOR_KEY: {name: list(map(attributes.attribute_class_for_descriptor, v)) for name, v in iter(layer_data.get(consts.SETTINGS_DESCRIPTOR_KEY, {}).items())},
+            consts.DAG_DESCRIPTOR_KEY: [
+                nodes.ControlDescriptor.deserialize(i) for i in iter(layer_data.get(consts.DAG_DESCRIPTOR_KEY, []))],
+            consts.SETTINGS_DESCRIPTOR_KEY: {
+                name: list(map(attributes.attribute_class_for_descriptor, v)) for name, v in iter(
+                    layer_data.get(consts.SETTINGS_DESCRIPTOR_KEY, {}).items())},
             consts.DG_DESCRIPTOR_KEY: graphs.NamedGraphs.from_data(layer_data.get(consts.DG_DESCRIPTOR_KEY, []))
         }
 
         return cls(data)
 
     @override(check_signature=False)
-    def update(self, kwargs: Dict):
+    def update(self, kwargs: dict):
 
         self._update_settings(kwargs)
         rig_layer_info = kwargs.get(consts.DAG_DESCRIPTOR_KEY)
@@ -484,6 +538,7 @@ class RigLayerDescriptor(LayerDescriptor):
         if dg_graphs is not None:
             self[consts.DG_DESCRIPTOR_KEY] = graphs.NamedGraphs.from_data(dg_graphs)
 
+    @override(check_signature=False)
     def setting(self, node_name: str, name: str) -> attributes.AttributeDescriptor | None:
         """
         Returns the attribute descriptor instance attached to the node with and with the given name.
@@ -506,7 +561,7 @@ class RigLayerDescriptor(LayerDescriptor):
 
         return found_descriptor
 
-    def add_setting(self, node_name: str, **kwargs: Dict):
+    def add_setting(self, node_name: str, **kwargs: dict):
         """
         Adds a new setting to the node with the given attribute descriptor data.
 
@@ -529,12 +584,12 @@ class RigLayerDescriptor(LayerDescriptor):
 
         return s
 
-    def add_settings(self, node_name: str, attribute_descriptors: List[attributes.AttributeDescriptor]):
+    def add_settings(self, node_name: str, attribute_descriptors: list[attributes.AttributeDescriptor]):
         """
         Adds given settings to the node with given name.
 
         :param str node_name: name of the node to attach the setting to.
-        :param List[attributes.AttributeDescriptor] attribute_descriptors: attribute descriptors to add.
+        :param list[attributes.AttributeDescriptor] attribute_descriptors: attribute descriptors to add.
         """
 
         for setting in attribute_descriptors:
@@ -566,6 +621,7 @@ class RigLayerDescriptor(LayerDescriptor):
 
         return False
 
+    @override(check_signature=False)
     def set_setting_value(self, node_name: str, name: str, value: Any):
         """
         Sets the value for setting.
@@ -599,11 +655,11 @@ class RigLayerDescriptor(LayerDescriptor):
         except KeyError:
             return False
 
-    def _update_settings(self, kwargs: Dict):
+    def _update_settings(self, kwargs: dict):
         """
-        Internal function that updates settings attriubtes.
+        Internal function that updates settings attributes.
 
-        :param Dict kwargs: keyword arguments.
+        :param dict kwargs: keyword arguments.
         """
 
         settings = self[consts.SETTINGS_DESCRIPTOR_KEY]

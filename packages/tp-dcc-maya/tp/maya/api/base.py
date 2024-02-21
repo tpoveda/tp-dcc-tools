@@ -153,12 +153,13 @@ def node_by_object(
 
 
 def node_by_name(
-        node_name) -> DGNode | DagNode | NurbsCurve | Mesh | Camera | IkHandle | Joint | ContainerAsset | AnimCurve | \
-                        SkinCluster | AnimLayer | ObjectSet | BlendShape | DisplayLayer | None:
+        node_name: str | OpenMaya.MObject) -> DGNode | DagNode | NurbsCurve | Mesh | Camera | IkHandle | Joint | \
+                                              ContainerAsset | AnimCurve | SkinCluster | AnimLayer | ObjectSet | \
+                                              BlendShape | DisplayLayer | None:
     """
     Returns a DAG node instance based on the given node name (expecting a full path).
 
-    :param str node_name: Maya node name.
+    :param str or OpenMaya.Mobject node_name: Maya node name or object instance.
     :return: API node instance.
     :rtype: DGNode or DagNode
     """
@@ -250,57 +251,57 @@ def plug_by_name(plug_path):
     return Plug(node_by_object(plug.node()), plug)
 
 
-def iterate_selected(filter_types=()):
+def iterate_selected(filter_types: tuple[int] = ()) -> Iterator[DGNode]:
     """
-    Generator function that iterates DAG node instances from selected objects in Maya.
+    Generator function that yields all DAG node instances from selected objects in Maya.
 
     :param tuple(OpenMaya.MFn.kType) filter_types: optional tuple of types to filter selected nodes by.
     :return: iterated selected DAG nodes.
-    :rtype: generator(DGNode)
+    :rtype: Iterator[DGNode]
     """
 
     return map(node_by_object, nodes.iterate_selected_nodes(filter_to_apply=filter_types))
 
 
-def selected(filter_types=()):
+def selected(filter_types: tuple[int] = ()) -> list[DGNode]:
     """
     Returns DAG node instances from selected objects in Maya.
 
-    :param tuple(OpenMaya.MFn.kType) filter_types: optional tuple of types to filter selected nodes by.
+    :param tuple(int) filter_types: optional tuple of types to filter selected nodes by.
     :return: list of selected DAG nodes.
-    :rtype: list(DGNode)
+    :rtype: list[DGNode]
     """
 
     return list(iterate_selected(filter_types=filter_types))
 
 
-def select(objects, mod=None, apply=True):
+def select(objects: list[DGNode], mod: OpenMaya.MDGModifier | None = None, apply: bool = True) -> OpenMaya.MDGModifier:
     """
     Selects all given nodes in current scene.
 
     :param list(DGNode) objects: list of nodes to select.
-    :param OpenMaya.MDGModifier or OpenMaya.MDagModifier mod: optional modifier to run command in.
+    :param OpenMaya.MDGModifier mod: optional modifier to run command in.
     :param bool apply: whether to apply the modifier immediately.
     :return: modifier used to run the select operation.
-    :rtype: OpenMaya.MDGModifier or OpenMaya.MDagModifier
+    :rtype: OpenMaya.MDGModifier
     """
 
     mod = mod or OpenMaya.MDGModifier()
-    mod.pythonCommandToExecute('from maya import cmds;cmds.select({})'.format([i.fullPathName() for i in objects]))
+    mod.pythonCommandToExecute(f'from maya import cmds;cmds.select({[i.fullPathName() for i in objects]})')
     if apply:
         mod.doIt()
 
     return mod
 
 
-def clear_selection(mod=None, apply=True):
+def clear_selection(mod: OpenMaya.MDGModifier | None = None, apply: bool = True) -> OpenMaya.MDGModifier:
     """
     Clears current selection.
 
-    :param OpenMaya.MDGModifier or OpenMaya.MDagModifier mod: optional modifier to run command in.
+    :param OpenMaya.MDGModifier mod: optional modifier to run command in.
     :param bool apply: whether to apply the modifier immediately.
     :return: modifier used to clear current selection operation.
-    :rtype: OpenMaya.MDGModifier or OpenMaya.MDagModifier
+    :rtype: OpenMaya.MDGModifier
     """
 
     mod = mod or OpenMaya.MDGModifier()
@@ -2616,6 +2617,21 @@ class IkHandle(DagNode):
     def vector_to_forward_axis_enum(self, vec: Iterable[float, float, float]) -> int:
         """
         Returns forward axis index from given vector.
+        The forward axis direction is determined by finding the axis with the largets magnitude in the vector.
+
+        If the sum of the values in the vector is negative, the method will return the corresponding negative up axis
+        value.Available up axis enum values are:
+            - IkHandle.FORWARD_NEGATIVE_X: The negative X axis
+            - IkHandle.FORWARD_NEGATIVE_Y: The negative Y axis
+            - IkHandle.FORWARD_NEGATIVE_Z: The negative Z axis
+
+        If the sum of the values in the vector is not negative, the method will return the axis index corresponding to
+        the forward axis direction.
+
+        The possible axis indexes are:
+            - XAXIS: The X axis
+            - YAXIS: The Y axis
+            - ZAXIS: The Z axis
 
         :param Iterable[float, float, float] vec: vector.
         :return: forward axis index.
@@ -2625,7 +2641,7 @@ class IkHandle(DagNode):
         axis_index = mathlib.X_AXIS_INDEX
         is_negative = sum(vec) < 0.0
 
-        for i, value in enumerate(vec):
+        for axis_index, value in enumerate(vec):
             if int(value) != 0:
                 break
 
@@ -2641,6 +2657,21 @@ class IkHandle(DagNode):
     def vector_to_up_axis_enum(self, vec: Iterable[float, float, float]) -> int:
         """
         Returns up axis index from given vector.
+        The up axis direction is determined by finding the axis with the largest magnitude in the vector.
+
+        If the sum of the values in the vector is negative, the method will return the corresponding negative up axis
+        value.Available up axis enum values are:
+            - IkHandle.UP_NEGATIVE_X: The negative X axis
+            - IkHandle.UP_POSITIVE_Y: The negative Y axis
+            - IkHandle.UP_NEGATIVE_Z: The negative Z axis
+
+        If the sum of the values in the vector is not negative, the method will return the axis index corresponding to
+        the up axis direction.
+
+        The possible axis indexes are:
+            - XAXIS: The X axis
+            - YAXIS: The Y axis
+            - ZAXIS: The Z axis
 
         :param Iterable[float, float, float] vec: vector.
         :return: up axis index.
@@ -2650,7 +2681,7 @@ class IkHandle(DagNode):
         axis_index = mathlib.X_AXIS_INDEX
         is_negative = sum(vec) < 0.0
 
-        for i, value in enumerate(vec):
+        for axis_index, value in enumerate(vec):
             if int(value) != 0:
                 break
 
