@@ -41,18 +41,6 @@ TRANSFORM_BASE_ATTRS = (
     '.v'
 )
 
-TRACKER_TRANSLATE_ATTR_NAME = 'translateTrack'
-TRACKER_TRANSLATE_DEFAULT_ATTR_NAME = 'translateTrackDefault'
-TRACKER_ROTATE_ATTR_NAME = 'rotateTrack'
-TRACKER_ROTATE_DEFAULT_ATTR_NAME = 'rotateTrackDefault'
-TRACKER_SCALE_ATTR_NAME = 'scaleTrack'
-TRACKER_SCALE_DEFAULT_ATTR_NAME = 'scaleTrackDefault'
-ALL_TRANSFORM_TRACKER_ATTRIBUTE_NAMES = [
-    TRACKER_TRANSLATE_ATTR_NAME, TRACKER_TRANSLATE_DEFAULT_ATTR_NAME,
-    TRACKER_ROTATE_ATTR_NAME, TRACKER_ROTATE_DEFAULT_ATTR_NAME,
-    TRACKER_SCALE_ATTR_NAME, TRACKER_SCALE_DEFAULT_ATTR_NAME
-]
-
 
 def check_transform(node_name: str):
     """
@@ -84,25 +72,27 @@ def is_transform(node_name: str) -> bool:
     return True
 
 
-def is_transform_default(transform):
+def is_transform_default(transform_node_name: str) -> bool:
     """
-    Returns whether given tranforms has the default values (identity matrix)
-    translate = [0, 0, 0]
-    rotate = [0, 0, 0]
-    scale = [1, 1, 1]
-    :param transform: str, transform to check
-    :return: bool
+    Returns whether given transforms has the default values (identity matrix).
+        - translate = [0, 0, 0]
+        - rotate = [0, 0, 0]
+        - scale = [1, 1, 1]
+
+    :param str transform_node_name: str, transform to check
+    :return: True if given transform node has default values in its transform attributes.
+    :rtype: bool
     """
 
     attrs = ['translate', 'rotate']
     for attr in attrs:
         for axis in 'XYZ':
-            value = maya.cmds.getAttr('{}.{}{}'.format(transform, attr, axis))
+            value = cmds.getAttr('{}.{}{}'.format(transform_node_name, attr, axis))
             if value < -0.00001 or value > 0.00001:
                 return False
 
     for axis in 'XYZ':
-        if maya.cmds.getAttr('{}.scale{}'.format(transform, axis)) != 1:
+        if cmds.getAttr('{}.scale{}'.format(transform_node_name, axis)) != 1:
             return False
 
     return True
@@ -1761,78 +1751,6 @@ def parent_transforms_shapes(
         shape_utils.rename_shapes(target_transform)
 
     return target_transform
-
-
-def add_transform_tracker_attributes(
-        transform_node, translate=(0.0, 0.0, 0.0), rotate=(0.0, 0.0, 0.0), scale=(1.0, 1.0, 1.0)):
-    """
-    Adds transform tracker attributes to the given transform node
-    :param transform_node: str, name of the transform to track transforms of
-    :param translate: tuple(float, float, float), initial translation values
-    :param rotate: tuple(float, float, float), initial rotation values
-    :param scale: tuple(float, float, float), initial scale values
-    """
-
-    for i, attr_name in enumerate(ALL_TRANSFORM_TRACKER_ATTRIBUTE_NAMES):
-        if not maya.cmds.attributeQuery(attr_name, node=transform_node, exists=True):
-            maya.cmds.addAttr(transform_node, longName=attr_name, attributeType='double3')
-            for axis in 'XYZ':
-                axis_attr = '{}{}'.format(attr_name, axis)
-                if not maya.cmds.attributeQuery(axis_attr, node=transform_node, exists=True):
-                    maya.cmds.addAttr(transform_node, longName=axis_attr, attributeType='double', parent=attr_name)
-
-    maya.cmds.setAttr('.'.join([transform_node, TRACKER_TRANSLATE_ATTR_NAME]), translate[0], translate[1], translate[2])
-    maya.cmds.setAttr(
-        '.'.join([transform_node, TRACKER_TRANSLATE_DEFAULT_ATTR_NAME]), translate[0], translate[1], translate[2])
-    maya.cmds.setAttr('.'.join([transform_node, TRACKER_ROTATE_ATTR_NAME]), rotate[0], rotate[1], rotate[2])
-    maya.cmds.setAttr('.'.join([transform_node, TRACKER_ROTATE_DEFAULT_ATTR_NAME]), rotate[0], rotate[1], rotate[2])
-    maya.cmds.setAttr('.'.join([transform_node, TRACKER_SCALE_ATTR_NAME]), scale[0], scale[1], scale[2])
-    maya.cmds.setAttr('.'.join([transform_node, TRACKER_SCALE_DEFAULT_ATTR_NAME]), scale[0], scale[1], scale[2])
-
-
-def freeze_scale_tracker(transform_node):
-    """
-    Freezes the scale tracker attribute setting to a scale of 1.0 no matter the current scale of the given transform
-    :param transform_node: str, transform node we want to freeze scale tracker of
-    """
-
-    if not maya.cmds.attributeQuery(TRACKER_SCALE_ATTR_NAME, node=transform_node, exists=True):
-        return False
-
-    current_scale = maya.cmds.getAttr('.'.join([transform_node, TRACKER_SCALE_ATTR_NAME]))[0]
-    maya.cmds.setAttr(
-        '.'.join([transform_node, TRACKER_SCALE_DEFAULT_ATTR_NAME]),
-        current_scale[0], current_scale[1], current_scale[2])
-
-    return True
-
-
-def freeze_scale_tracker_list(transform_nodes):
-    """
-    Freezes the scale tracker attribute setting to a scale of 1.0 no matter the current scale of the given transforms
-    :param transform_nodes: list(str), transform nodes we want to freeze scale tracker of
-    """
-
-    frozen_transforms = list()
-    for transform_to_freeze in transform_nodes:
-        valid_feeze = freeze_scale_tracker(transform_to_freeze)
-        if valid_feeze:
-            frozen_transforms.append(transform_to_freeze)
-
-    return frozen_transforms
-
-
-def delete_transform_tracker_attributes(transform_node):
-    """
-    Removes transform tracking attributes from the given transform node
-    :param transform_node: str, name of the transform we want to remove tracker attributes of
-    :return:
-    """
-
-    transform_node = helpers.force_list(transform_node)
-    for node_to_delete_attrs in transform_node:
-        for tracker_attr in ALL_TRANSFORM_TRACKER_ATTRIBUTE_NAMES:
-            attribute.delete_attribute(node_to_delete_attrs, tracker_attr)
 
 
 def axis_world_position(transform_node, axis):

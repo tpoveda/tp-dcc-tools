@@ -5,6 +5,8 @@
 Module that contains functions and classes related to Maya UI
 """
 
+from __future__ import annotations
+
 import traceback
 import contextlib
 from collections import OrderedDict
@@ -171,7 +173,7 @@ def active_editor():
 	return panel.split('|')[-1]
 
 
-def panel_with_focus(viewport3d=True):
+def panel_with_focus(viewport3d: bool = True):
 	"""
 	Returns the panel with focus.
 
@@ -180,16 +182,17 @@ def panel_with_focus(viewport3d=True):
 	:rtype: str
 	"""
 
+	focus_panel = cmds.getPanel(withFocus=True)
 	try:
-		focus_panel = cmds.getPanel(withFocus=True)
 		if viewport3d:
 			cmds.modelPanel(focus_panel, query=True, camera=True)
-		return focus_panel
 	except RuntimeError:
 		return ''
 
+	return focus_panel
 
-def panel_under_cursor(viewport3d=True):
+
+def panel_under_cursor(viewport3d: bool = True) -> str:
 	"""
 	Returns the panel under the pointer.
 
@@ -207,7 +210,7 @@ def panel_under_cursor(viewport3d=True):
 		return ''
 
 
-def first_viewport_panel():
+def first_viewport_panel() -> str:
 	"""
 	Returns the first visible viewport panel in the current Maya session.
 
@@ -227,15 +230,19 @@ def first_viewport_panel():
 	return panel
 
 
-def panel_under_pointer_or_focus(viewport3d=False, prioritize_under_cursor=True):
+def panel_under_pointer_or_focus(
+		viewport3d: bool = False, prioritize_under_cursor: bool = True, message: bool = True) -> str:
 	"""
 	Returns the Maya panel that is either:
 		1. Under the cursor.
 		2. The active panel (with focus).
 		3. First visible viewport panel (only if viewport3d is True).
 
-	:param bool viewport3d: True will test to see if the panel under the cursor is a 3d viewport.
-	:param bool prioritize_under_cursor: whether to return under cursor first or with focus.
+	:param bool viewport3d: True will test to see if the panel under the cursor is a 3d viewport. If True, will
+		return only panels with 3D camears (for example, 3d viewports).
+	:param bool prioritize_under_cursor: whether to return under cursor first or with focus. In general, use
+		prioritize_under_cursor=True for hotkeys and prioritize_under_cursor=Fasle for UIs.
+	:param str message: whether to show warning message if no panel found.
 	:return: name of the Maya panel.
 	:rtype: str
 	"""
@@ -260,8 +267,9 @@ def panel_under_pointer_or_focus(viewport3d=False, prioritize_under_cursor=True)
 		if panel:
 			return panel
 
-	logger.warning(
-		'No viewport found, the active window must be under the cursor or the active window must be a 3d viewport')
+	if message:
+		logger.warning(
+			'No viewport found, the active window must be under the cursor or the active window must be a 3d viewport')
 
 	return ''
 

@@ -1,0 +1,265 @@
+{
+  "name": "noddleGlobalConfig",
+  "description": "",
+  "rules": [
+    {
+      "name": "object",
+      "creator": "Tomi Poveda",
+      "description": "Standard Maya node type convention, used for utility nodes or any node which doesn't have an explicit Rule",
+      "expression": "{componentName}_{side}_{section}_{type}",
+      "exampleFields": {"componentName":  "arm", "side": "L","section":  "world", "type": "transform"}
+    },
+    {
+      "name": "componentName",
+      "creator": "Tomi Poveda",
+      "description": "The rule for component names which includes the side.",
+      "expression": "{componentName}_{side}",
+      "exampleFields": {"componentName":  "arm",  "side":  "L"}
+    },
+    {
+      "name": "inputName",
+      "creator": "Tomi Poveda",
+      "description": "The expression for input node names.",
+      "expression": "{componentName}_{side}_{id}_{type}",
+      "exampleFields": {"componentName":  "arm", "side": "L", "id":  "world", "type":  "input"}
+    },
+    {
+      "name": "outputName",
+      "creator": "Tomi Poveda",
+      "description": "The expression for output node names.",
+      "expression": "{componentName}_{side}_{id}_{type}",
+      "exampleFields": {"componentName":  "arm", "side": "L","id":  "world", "type": "output"}
+    },
+    {
+      "name": "settingsName",
+      "creator": "Tomi Poveda",
+      "description": "The expression for Setting nodes ie. controlPanel.",
+      "expression": "{componentName}_{side}_{section}_{type}",
+      "exampleFields": {"componentName":  "arm", "side": "L", "section":  "controlPanel", "type":  "settings"}
+    },
+    {
+      "name": "layerHrc",
+      "creator": "Tomi Poveda",
+      "description": "Component Layer name.",
+      "expression": "{componentName}_{side}_{layerType}_{type}",
+      "exampleFields": {"componentName":  "arm", "side": "L", "layerType": "rigLayer", "type": "hrc"}
+    },
+    {
+      "name": "layerMeta",
+      "creator": "Tomi Poveda",
+      "description": "Component Layer Meta Node name.",
+      "expression": "{componentName}_{side}_{layerType}_{type}",
+      "exampleFields": {"componentName":  "arm", "side": "L",   "layerType": "rigLayer", "type": "meta"}
+    },
+    {
+      "name": "componentHrc",
+      "creator": "Tomi Poveda",
+      "description": "Top level Component transform name.",
+      "expression": "{componentName}_{side}_{type}",
+      "exampleFields": {"componentName":  "arm", "side": "L", "type": "hrc"}
+    },
+    {
+      "name": "componentMeta",
+      "creator": "Tomi Poveda",
+      "description": "Component Meta Node name.",
+      "expression": "{componentName}_{side}_{type}",
+      "exampleFields": {"componentName":  "arm", "side": "L",  "type": "meta"}
+    },
+    {
+      "name": "containerName",
+      "creator": "Tomi Poveda",
+      "description": "Noddle Asset Container name",
+      "expression": "{componentName}_{side}_{section}_{type}",
+      "exampleFields": {"componentName":  "arm", "side": "L","section":  "world", "type": "container"}
+    },
+    {
+      "name": "guideName",
+      "creator": "Tomi Poveda",
+      "description": "The expression for Guide node names.",
+      "expression": "{componentName}_{side}_{id}_{type}",
+      "exampleFields": {"componentName":  "arm", "side": "L", "id":  "world", "type":  "guide"}
+    },
+    {
+      "name": "controlName",
+      "creator": "Tomi Poveda",
+      "description": "The expression for Animation Control node names.",
+      "expression": "{componentName}_{side}_{id}_{type}",
+      "exampleFields": {"componentName":  "arm", "side": "L", "id":  "world", "type": "control"}
+    },
+    {
+      "name": "selectionSet",
+      "creator": "Tomi Poveda",
+      "description": "Component selection set name ie. controls, joints",
+      "expression": "{componentName}_{side}_{selectionSet}_{type}",
+      "exampleFields": {"componentName":  "arm", "side": "L", "selectionSet": "ctrls", "type": "objectSet"}
+    },
+    {
+      "name": "skinJointName",
+      "creator": "Tomi Poveda",
+      "description": "Deformation joint chain name.",
+      "expression": "{componentName}_{side}_{id}_{type}",
+      "exampleFields": {"componentName":  "arm", "side": "L","id": "upr", "type": "joint"}
+    },
+    {
+      "name": "controlJointName",
+      "creator": "Tomi Poveda",
+      "description": "Control joint name.",
+      "expression": "{componentName}_{side}_{id}_{type}",
+      "exampleFields": {"componentName":  "arm", "side": "L","id": "upr", "type": "controlJoint"}
+    },
+    {
+      "name": "connectorsGrp",
+      "creator": "Tomi Poveda",
+      "description": "Transform which contains connectors.",
+      "expression": "{componentName}_{side}_{type}",
+      "exampleFields": {"componentName":  "arm", "side": "L", "type": "connectorsGroup"}
+    }
+  ],
+  "tokens": [
+    {
+      "name": "side",
+      "description": "Component Side name",
+      "table": {
+        "L": "L",
+        "l": "l",
+        "R": "R",
+        "r": "r",
+        "M": "M",
+        "m": "m",
+        "c": "c",
+        "C": "C",
+        "LEFT": "left",
+        "left": "left",
+        "RIGHT": "RIGHT",
+        "right": "right",
+        "middle": "mid",
+        "ctr": "ctr"
+      }
+    },
+    {
+        "name": "sideSymmetry",
+        "description": "The name for the side when the component is mirrored.",
+        "table": {
+            "L": "R",
+            "l": "r",
+            "R": "L",
+            "r": "l",
+            "LEFT": "RIGHT",
+            "left": "right",
+            "RIGHT": "LEFT",
+            "right": "left"
+        }
+    },
+    {
+        "name": "selectionSet",
+        "description": "Component and rig selection sets names",
+        "permission": [{"name":  "rig"}, {"name":  "componentDeform"}, {"name":  "componentCtrls"},
+        {"name":  "deform"}, {"name":  "ctrls"}],
+        "table": {
+            "rig": "root",
+            "componentDeform": "deform",
+            "componentCtrls": "ctrls",
+            "deform": "skeleton",
+            "ctrls": "ctrls"
+        }
+    },
+    {
+        "name": "layerType",
+        "description": "The Noddle Layer name which is used for both the root Transform and the Meta Node",
+        "permission": [{"name":  "NoddleComponentLayer"},
+        {"name":  "NoddleRigLayer"},
+        {"name":  "NoddleSkeletonLayer"},
+        {"name":  "NoddleInputLayer"},
+        {"name":  "NoddleOutputLayer"},
+        {"name":  "NoddleXGroupLayer"},
+        {"name":  "NoddleGeometryLayer"}],
+        "table": {
+            "NoddleComponentLayer": "componentLayer",
+            "NoddleRigLayer": "rigLayer",
+            "NoddleSkeletonLayer": "skeletonLayer",
+            "NoddleInputLayer": "inputLayer",
+            "NoddleOutputLayer": "outputLayer",
+            "NoddleXGroupLayer": "xGroupLayer",
+            "NoddleGeometryLayer": "geo"
+        }
+    },
+    {
+        "name": "section",
+        "description": "",
+        "permissions": [{"name":  "root"},
+                        {"name":  "controlPanel"}],
+        "table": {
+            "root": "root",
+            "controlPanel": "controlPanel"
+        }
+    },
+    {
+        "name": "system",
+        "description": "The name for a system within a component ie. ik/fk",
+        "permissions": [{"name":  "fk"},
+                        {"name":  "ik"},
+                        {"name":  "poleVector"}],
+        "table": {
+            "fk": "fk",
+            "ik": "ik",
+            "poleVector": "pv"
+        }
+    },
+    {
+        "name": "type",
+        "description": "Specifies the name for a Maya Node Type or Noddle Node Type",
+        "permissions":[{"name": "meta"},
+                        {"name": "control"},
+                        {"name": "curve"},
+                        {"name": "settings"},
+                        {"name": "controlLayer"},
+                        {"name": "noddleOutput"},
+                        {"name": "noddleInput"},
+                        {"name": "input"},
+                        {"name": "output"},
+                        {"name": "hrc"},
+                        {"name": "joint"},
+                        {"name": "objectSet"},
+                        {"name": "transform"},
+                        {"name": "poleVector"}],
+        "table": {
+            "meta": "meta",
+            "control": "anim",
+            "annotation": "ann",
+            "connector": "cnt",
+            "curve": "crv",
+            "settings": "settings",
+            "controlLayer": "ctrlLayer",
+            "hiveOutput": "out",
+            "hiveInput": "in",
+            "input": "in",
+            "output": "out",
+            "hrc": "hrc",
+            "joint": "jnt",
+            "controlJoint": "cjnt",
+            "objectSet": "set",
+            "transform": "srt",
+            "poleVector": "pv",
+            "parentConstraint": "parentConst",
+            "scaleConstraint": "scaleConst",
+            "orientConstraint": "orientConst",
+            "pointConstraint": "pointConst",
+            "decomposeMatrix": "decomp",
+            "multMatrix": "matMult",
+            "plusMinusAverage": "pma",
+            "blendMatrix": "blend",
+            "inverseMatrix": "inverse",
+            "blendTwoAttr": "blendTwo",
+            "floatMath": "fMath",
+            "pickMatrix": "pick",
+            "quatToEuler": "quatToEuler",
+            "distanceBetween": "dist",
+            "pairBlend": "pairBlend",
+            "multDoubleLinear": "multDoubleLinear",
+            "ikHandle": "ikhandle",
+            "effector": "ikeffector",
+            "skinCluster": "skin"
+        }
+    }
+  ]
+}

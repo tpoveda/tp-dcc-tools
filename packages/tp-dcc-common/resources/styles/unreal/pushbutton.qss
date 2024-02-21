@@ -11,7 +11,7 @@ QPushButton
     height: 20px;
     padding-bottom: @ONE_PIXELpx;
     border-radius: @ROUND_SIZEpx;
-    border: @ONE_PIXELpx solid black;
+    border: @ONE_PIXELpx solid @BLACK_DARK_COLOR;
 }
 
 QPushButton:hover,

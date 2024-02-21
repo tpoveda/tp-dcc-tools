@@ -3,7 +3,7 @@ version: '1.0.0'
 required: True
 author: 'Tomas Poveda'
 authorEmail: 'tpovedatd@gmail.com'
-description: 'Maya package for tpDcc Tools framework'
+description: 'Maya package for tp-dcc Tools framework'
 displayName: 'tpDcc Maya'
 environment:
   PYTHONPATH:
@@ -12,6 +12,10 @@ environment:
     - '{self}'
   TPDCC_META_PATHS:
     - '{self}/tp/maya/meta/base.py'
+    - '{self}/tp/maya/meta/planeorient.py'
+  TPDCC_COMMAND_LIB:
+    - '{self}/tp/maya/api/commands'
+    - '{self}/tp/maya/libs/curves/commands'
   TPDCC_TOOLS_MANAGER_PATHS:
     - '{self}/tp/maya/managers/tools.py'
   TPDCC_CURVES_PATHS:

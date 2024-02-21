@@ -255,23 +255,26 @@ def match_curves(driver, targets, space=None):
 
 
 def create_curve_shape(
-        curve_data, parent=None, space=None, curve_size=1.0, translate_offset=(0.0, 0.0, 0.0),
-        scale_offset=(1.0, 1.0, 1.0), axis_order='XYZ', color=None, mirror=None):
+        curve_data: dict, parent: OpenMaya.MObject | None = None, space: int | None =None, curve_size: float = 1.0,
+        translate_offset: tuple[float, float, float] = (0.0, 0.0, 0.0),
+        scale_offset: tuple[float, float, float] = (1.0, 1.0, 1.0), axis_order: str = 'XYZ',
+        color: tuple[float, float, float] | None = None,
+        mirror: bool | None = None) -> tuple[OpenMaya.MObject, list[OpenMaya.MObject]]:
     """
     Creates a NURBS curve based on the given curve data.
 
     :param dict curve_data: data, {"shapeName": {"cvs": [], "knots":[], "degree": int, "form": int, "matrix": []}}
     :param str or OpenMaya.MObject parent: transform that takes ownership of the curve shapes. If not parent is given a new
         transform will be created
-    :param OpenMaya.MSpace space: coordinate space to set the point data
+    :param int space: coordinate space to set the point data
     :param float curve_size: global curve size offset.
-    :param tuple(float) translate_offset: translate offset for the curve.
-    :param tuple(float) scale_offset: scale offset for the curve.
+    :param tuple[float, float, float] translate_offset: translate offset for the curve.
+    :param tuple[float, float, float] scale_offset: scale offset for the curve.
     :param str axis_order: axis order for the curve.
-    :param tuple(float) color: curve color.
-    :param bool mirror: whether curve should be mirrored.
+    :param tuple[float, float, float] or None color: curve color.
+    :param bool or None mirror: whether curve should be mirrored.
     :return: tuple containing the parent MObject and the list of MObject shapes
-    :rtype: tuple(MObject, list(MObject)),
+    :rtype: tuple[OpenMaya.MObject, list[OpenMaya.MObject]]
     """
 
     parent_inverse_matrix = OpenMaya.MMatrix()
@@ -287,19 +290,19 @@ def create_curve_shape(
     scale = CurveCV(scale_offset)
     order = [{'X': 0, 'Y': 1, 'Z': 2}[x] for x in axis_order]
 
-    curves_to_create = {}
+    curves_to_create: dict[str, str] = {}
     for shape_name, shape_data in curve_data.items():
         if not isinstance(shape_data, dict):
             continue
-        curves_to_create[shape_name] = list()
+        curves_to_create[shape_name] = []
         shape_parent = shape_data.get('shape_parent', None)
         if shape_parent:
             if shape_parent in curves_to_create:
                 curves_to_create[shape_parent].append(shape_name)
 
-    created_curves = []
-    all_shapes = []
-    created_parents = {}
+    created_curves: list[str] = []
+    all_shapes: list[OpenMaya.MObject] = []
+    created_parents: dict[str, OpenMaya.MObject] = {}
 
     # If parent already has a shape with the same name we delete it
     # TODO: We should compare the bounding boxes of the parent shape and the new one and scale it to fit new bounding

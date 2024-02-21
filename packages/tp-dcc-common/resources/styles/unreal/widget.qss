@@ -6,7 +6,7 @@
 
 QWidget
 {
-    /*background-color: @BLACK_EERIE_COLOR;*/
+    background-color: @BLACK_EERIE_COLOR;
     color: white;
     font-family: "Roboto";
 }

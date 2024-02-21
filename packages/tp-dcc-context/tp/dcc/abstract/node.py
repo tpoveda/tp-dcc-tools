@@ -12,10 +12,10 @@ from tp.dcc.abstract import object
 from tp.common.python import decorators
 
 if typing.TYPE_CHECKING:
-    from tp.dcc.abstract.scene import AbstractScene
+    from tp.dcc.abstract.scene import AFnScene
 
 
-class AbstractNode(object.AbstractObject):
+class AFnNode(object.AFnObject):
     """
     Overload AbstractObject that outlines scene node interfaces.
     Any overloaded function should take care of internally storing node handle for faster lookups.
@@ -26,12 +26,12 @@ class AbstractNode(object.AbstractObject):
     __scene__ = None
 
     @decorators.classproperty
-    def scene(self, cls) -> AbstractScene:
+    def scene(self, cls) -> AFnScene:
         """
         Getter method that returns the scene context class.
 
-        :return: scene node belongs to
-        :rtype: Scene
+        :return: scene node belongs to.
+        :rtype: AFnScene
         """
 
         if cls.__scene__ is None:

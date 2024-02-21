@@ -154,7 +154,7 @@ class Influences(MutableMapping):
         self.__objects__.clear()
 
 
-class AbstractSkin(abstract_node.AbstractNode):
+class AbstractSkin(abstract_node.AFnNode):
     """
     Overloads of AbstractNode context class to handle behaviour for DCC skinning.
     """

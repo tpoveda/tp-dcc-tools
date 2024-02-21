@@ -114,6 +114,30 @@ class DccCommandInterface:
 
         return self.do(**self._arguments)
 
+    def run_arguments(self, **arguments) -> Any:
+        """
+        Runs `do function with given arguments.
+
+        :param arguments: key , value pairs corresponding to arguments for `do` function.
+        :return: command run result.
+        :rtype: Any
+        """
+
+        self.parse_arguments(arguments)
+        return self.run()
+
+    def parse_arguments(self, arguments: dict):
+        """
+        Parses given arguments, so they are ready to be passed to the command `do` function.
+
+        :param dict arguments: arguments as dictionary.
+        """
+
+        kwargs = self._arguments
+        kwargs.update(arguments)
+        result = self.resolve_arguments(DccCommandInterface.ArgumentParser(**kwargs)) or {}
+        kwargs.update(result)
+
     def resolve_arguments(self, arguments: dict) -> dict | None:
         """
         Function that is called before running the command. Useful to valid incoming command arguments before executing

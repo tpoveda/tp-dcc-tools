@@ -5,13 +5,19 @@
 Module that contains functions and classes related to shapes
 """
 
-import maya.cmds
-import maya.api.OpenMaya
-import maya.api.OpenMayaAnim
+from __future__ import annotations
 
-from tp.core import log, dcc
+from typing import Sequence
+
+import maya.cmds as cmds
+import maya.api.OpenMaya as OpenMaya
+import maya.OpenMaya as OpenMaya1
+import maya.api.OpenMayaAnim as OpenMayaAnim
+
+from tp.core import log
 from tp.common.python import helpers
 from tp.maya.cmds import exceptions, filtertypes, node as node_utils, name as name_utils
+from tp.maya.om import nodes
 
 logger = log.tpLogger
 
@@ -64,7 +70,7 @@ def is_a_shape(node):
     :return: bool
     """
 
-    if not maya.cmds.objectType(node, isAType='shape'):
+    if not cmds.objectType(node, isAType='shape'):
         return False
 
     return True
@@ -77,14 +83,14 @@ def is_shape(obj):
     :return: bool
     """
 
-    if not maya.cmds.objExists(obj):
+    if not cmds.objExists(obj):
         return False
 
-    if not maya.cmds.objectType(obj, isAType='shape'):
+    if not cmds.objectType(obj, isAType='shape'):
         return False
 
-    mobj = node_utils.get_mobject(obj)
-    if not mobj.hasFn(maya.api.OpenMaya.MFn.kShape):
+    mobj = nodes.mobject(obj)
+    if not mobj.hasFn(OpenMaya.MFn.kShape):
         return False
 
     return True
@@ -118,14 +124,14 @@ def list_intermediates(geo):
     :param geo: str, transform to list intermediate shapes for
     """
 
-    if not maya.cmds.objExists(geo):
+    if not cmds.objExists(geo):
         raise exceptions.NodeExistsException(geo)
     if is_shape(geo):
-        geo = maya.cmds.listRelatives(geo, parent=True, path=True)[0]
+        geo = cmds.listRelatives(geo, parent=True, path=True)[0]
 
     # Get intermediate shapes
-    shapes = maya.cmds.listRelatives(geo, shapes=True, noIntermediate=True, path=True)
-    all_shapes = maya.cmds.listRelatives(geo, shapes=True, path=True)
+    shapes = cmds.listRelatives(geo, shapes=True, noIntermediate=True, path=True)
+    all_shapes = cmds.listRelatives(geo, shapes=True, path=True)
     if not all_shapes:
         return []
     if not shapes:
@@ -142,7 +148,7 @@ def get_first_shape(node):
     :return: str
     """
 
-    shapes = get_shapes(node=node, non_intermediates=True, intermediates=False)
+    shapes = get_shapes(node_name=node, non_intermediates=True, intermediates=False)
     if shapes:
         return shapes[0]
 
@@ -153,24 +159,24 @@ def get_shapes(node_name, non_intermediates=True, intermediates=True, full_path=
     """
     Returns a list of shapes under a transform parent
     :param node_name: str, transform to list parent for
-    :param non_intermediates: bool, list non intermediate shapes
+    :param non_intermediates: bool, list non-intermediate shapes
     :param intermediates: bool, list intermediate shapes
     :param full_path: bool, Whether to return long names or not
     :return: list
     """
 
-    if node_name is None or not maya.cmds.objExists(node_name):
+    if node_name is None or not cmds.objExists(node_name):
         raise exceptions.NodeExistsException(node_name)
 
     if is_shape(node_name):
-        parent = maya.cmds.listRelatives(node_name, parent=True, fullPath=full_path)
-        return maya.cmds.listRelatives(parent, shapes=True, fullPath=True, ni=non_intermediates)
+        parent = cmds.listRelatives(node_name, parent=True, fullPath=full_path)
+        return cmds.listRelatives(parent, shapes=True, fullPath=True, ni=non_intermediates)
         # node_name = cmds.listRelatives(node_name, parent=True, path=True)[0]
 
     # Get shapes
     shapes = list()
     if non_intermediates:
-        non_intermediate_shapes = maya.cmds.listRelatives(node_name, shapes=True, noIntermediate=True, path=True)
+        non_intermediate_shapes = cmds.listRelatives(node_name, shapes=True, noIntermediate=True, path=True)
         if non_intermediate_shapes:
             shapes.extend(non_intermediate_shapes)
     if intermediates:
@@ -182,33 +188,33 @@ def get_shapes(node_name, non_intermediates=True, intermediates=True, full_path=
 def get_shape_node_type(node_name):
     """
     Returns the node type of the given node
-    :param shape_node: str, name of a maya node
+    :param node_name: str, name of a maya node
     :return: str
     """
 
     shapes = get_shapes(node_name)
     if shapes:
-        return maya.cmds.nodeType(shapes[0])
+        return cmds.nodeType(shapes[0])
 
 
 def get_shapes_of_type(node_name, shape_type=None, full_path=True, no_intermediate=False):
     """
     Returns a list of shapes under a transform parent
     :param node_name: str, transform to list parent for
-    :param shape_type: str, shape type to get
-    :param full_path: bool
-    :param no_intermediate: bool, list non intermediate shapes
+    :param shape_type: str, shape type to get.
+    :param bool full_path:
+    :param bool no_intermediate: list non-intermediate shapes
     :return: list
     """
 
     if node_utils.is_a_shape(node_name):
-        parent = maya.cmds.listRelatives(node_name, p=True, f=full_path)
-        return maya.cmds.listRelatives(parent, s=True, f=full_path, ni=no_intermediate)
+        parent = cmds.listRelatives(node_name, p=True, f=full_path)
+        return cmds.listRelatives(parent, s=True, f=full_path, ni=no_intermediate)
 
     if shape_type:
-        return maya.cmds.listRelatives(node_name, s=True, f=full_path, type=shape_type, ni=no_intermediate)
+        return cmds.listRelatives(node_name, s=True, f=full_path, type=shape_type, ni=no_intermediate)
     else:
-        return maya.cmds.listRelatives(node_name, s=True, f=full_path, ni=no_intermediate)
+        return cmds.listRelatives(node_name, s=True, f=full_path, ni=no_intermediate)
 
 
 def get_shapes_generator(mobj):
@@ -220,16 +226,16 @@ def get_shapes_generator(mobj):
 
     # TODO: Make this function to work with OpenMaya2
 
-    if not mobj.apiType() == maya.OpenMaya.MFn.kTransform:
+    if not mobj.apiType() == OpenMaya.MFn.kTransform:
         return
 
-    path = maya.OpenMaya.MDagPath.getAPathTo(mobj)
-    num_shapes = maya.OpenMaya.MScriptUtil()
+    path = OpenMaya1.MDagPath.getAPathTo(mobj)
+    num_shapes = OpenMaya1.MScriptUtil()
     num_shapes.createFromInt(0)
     num_shapes_ptr = num_shapes.asUintPtr()
     path.numberOfShapesDirectlyBelow(num_shapes_ptr)
-    for index in range(maya.OpenMaya.MScriptUtil(num_shapes_ptr).asUint()):
-        p = maya.OpenMaya.MDagPath.getAPathTo(mobj)
+    for index in range(OpenMaya1.MScriptUtil(num_shapes_ptr).asUint()):
+        p = OpenMaya1.MDagPath.getAPathTo(mobj)
         p.extendToShapeDirectlyBelow(index)
         yield p.node()
 
@@ -242,10 +248,10 @@ def get_transform(mobj):
     :return: OpenMaya.MObject
     """
 
-    if not node_utils.is_dag_node(mobj):
+    if not nodes.is_dag_node(mobj):
         return mobj
 
-    path = maya.api.OpenMaya.MDagPath.getAPathTo(mobj)
+    path = OpenMaya.MDagPath.getAPathTo(mobj)
     new_ptr = path.transform()
     if new_ptr != mobj:
         return new_ptr
@@ -266,19 +272,19 @@ def rename(geo):
 
     # Rename shapes
     for i in range(len(shapes)):
-        shape_type = maya.cmds.objectType(shapes[i])
+        shape_type = cmds.objectType(shapes[i])
 
         # Rename temporary shapes so hash index (#) is accurate
-        shapes[i] = maya.cmds.rename(shapes[i], geo + 'ShapeTMP')
+        shapes[i] = cmds.rename(shapes[i], geo + 'ShapeTMP')
 
         if shape_type == 'nurbsCurve':
-            shapes[i] = maya.cmds.rename(shapes[i], geo + 'CrvShape#')
+            shapes[i] = cmds.rename(shapes[i], geo + 'CrvShape#')
         elif shape_type == 'nurbsSurface':
-            shapes[i] = maya.cmds.rename(shapes[i], geo + 'SrfShape#')
+            shapes[i] = cmds.rename(shapes[i], geo + 'SrfShape#')
         elif shape_type == 'mesh':
-            shapes[i] = maya.cmds.rename(shapes[i], geo + 'MeshShape#')
+            shapes[i] = cmds.rename(shapes[i], geo + 'MeshShape#')
         else:
-            shapes[i] = maya.cmds.rename(shapes[i], geo + 'Shape#')
+            shapes[i] = cmds.rename(shapes[i], geo + 'Shape#')
 
     return shapes
 
@@ -294,7 +300,7 @@ def shape_input_attr(shape):
 
     # Determine shape input plug
     shp_input_attr = ''
-    shp_input_type = maya.cmds.objectType(shape)
+    shp_input_type = cmds.objectType(shape)
     shp_input_dict = {
         'mesh': 'inMesh',
         'nurbsCurve': 'create',
@@ -305,7 +311,7 @@ def shape_input_attr(shape):
     if shp_input_type in shp_input_dict:
         shp_input_attr = shp_input_dict[shp_input_type]
     else:
-        raise exceptions.ShapeUnsupportedType(shp_input_attr)
+        raise Exception(shp_input_attr)
 
     return shp_input_attr
 
@@ -322,7 +328,7 @@ def shape_output_attr(shape, world_space=True):
 
     # Determine shae output plug
     shp_output_attr = ''
-    shp_output_type = maya.cmds.objectType(shape)
+    shp_output_type = cmds.objectType(shape)
     shp_output_dict = {
         'mesh': ['outMesh', 'worldMesh'],
         'nurbsCurve': ['local', 'worldSpace'],
@@ -333,7 +339,7 @@ def shape_output_attr(shape, world_space=True):
     if shp_output_type in shp_output_dict:
         shp_output_attr = shp_output_dict[shp_output_type][int(world_space)]
     else:
-        raise exceptions.ShapeUnsupportedType(shp_output_attr)
+        raise Exception(shp_output_attr)
 
     return shp_output_attr
 
@@ -350,7 +356,7 @@ def shape_input_source(shape):
     # Determine shape input plug and shape input source plug
     shape_in_attr = shape_input_attr(shape)
     shape_in_plug = ''
-    shape_in_source = maya.cmds.listConnections(shape + '.' + shape_in_attr, source=True, destination=False, plugs=True)
+    shape_in_source = cmds.listConnections(shape + '.' + shape_in_attr, source=True, destination=False, plugs=True)
     if shape_in_source:
         shape_in_plug = shape_in_source[0]
 
@@ -403,27 +409,27 @@ def find_input_shape_1(shape):
     """
 
     # Get MObject for shape
-    shape_obj = node_utils.get_mobject(shape)
+    shape_obj = nodes.mobject(shape)
 
     # Get inMesh connection attribute
-    in_conn = maya.cmds.listConnections(shape, source=True, destination=False)
+    in_conn = cmds.listConnections(shape, source=True, destination=False)
     if not in_conn:
         return shape
 
     # Find connected deformer
-    deformer_history = maya.cmds.ls(maya.cmds.listHistory(shape), type='geometryFilter')
+    deformer_history = cmds.ls(cmds.listHistory(shape), type='geometryFilter')
     if not deformer_history:
         raise exceptions.ShapeValidDeformerAffectedException(shape)
-    deformer_obj = node_utils.get_mobject(deformer_history[0])
+    deformer_obj = nodes.mobject(deformer_history[0])
 
     # Get deformer function set
-    deformer_fn = maya.api.OpenMayaAnim.MFnGeometryFilter(deformer_obj)
+    deformer_fn = OpenMayaAnim.MFnGeometryFilter(deformer_obj)
 
     # Get input shape deformer
     geom_index = deformer_fn.indexForOutputShape(shape_obj)
     input_shape_obj = deformer_fn.inputShapeAtIndex(geom_index)
 
-    return maya.api.OpenMaya.MFnDagNode(input_shape_obj).partialPathName()
+    return OpenMaya.MFnDagNode(input_shape_obj).partialPathName()
 
 
 def find_input_shape_2(shape):
@@ -433,21 +439,21 @@ def find_input_shape_2(shape):
     :return: str
     """
 
-    transform = maya.cmds.listRelatives(shape, parent=True, path=True) or []
+    transform = cmds.listRelatives(shape, parent=True, path=True) or []
 
     if node_utils.is_type(shape, 'transform'):
         transform = [shape]
-        shapes = maya.cmds.listRelatives(shape, shapes=True, noIntermediate=True, path=True)
+        shapes = cmds.listRelatives(shape, shapes=True, noIntermediate=True, path=True)
         if not shapes:
             raise exceptions.ShapeFromTransformException(shape)
         shape = shapes[0]
 
     # Get all shapes and type
-    all_shapes = maya.cmds.listRelatives(transform[0], shapes=True, path=True)
-    shape_type = maya.cmds.objectType(shape)
+    all_shapes = cmds.listRelatives(transform[0], shapes=True, path=True)
+    shape_type = cmds.objectType(shape)
 
     # Get shape history and check it
-    shape_history = maya.cmds.listRelatives(maya.cmds.listHistory(shape), type=shape_type)
+    shape_history = cmds.listRelatives(cmds.listHistory(shape), type=shape_type)
     if shape_history.count(shape):
         shape_history.remove(shape)
     if not shape_history:
@@ -487,13 +493,13 @@ def get_components_from_shapes(shapes=None):
     if shapes:
         for shape in shapes:
             found_comps = None
-            if maya.cmds.nodeType(shape) == 'nurbsSurface':
+            if cmds.nodeType(shape) == 'nurbsSurface':
                 found_comps = '%s.cv[*]' % shape
 
-            if maya.cmds.nodeType(shape) == 'nurbsCurve':
+            if cmds.nodeType(shape) == 'nurbsCurve':
                 found_comps = '%s.cv[*]' % shape
 
-            if maya.cmds.nodeType(shape) == 'mesh':
+            if cmds.nodeType(shape) == 'mesh':
                 found_comps = '%s.vtx[*]' % shape
 
             if found_comps:
@@ -510,17 +516,17 @@ def rename_shapes(transform_node=None):
 
     renamed_shapes = list()
 
-    transform_node = helpers.force_list(transform_node or dcc.selected_nodes())
+    transform_node = helpers.force_list(transform_node or cmds.ls(sl=True, long=True))
     for node in transform_node:
         node_shapes = list()
         short_name = name_utils.get_short_name(node)
         shapes = get_shapes(node)
         if shapes:
-            node_shapes.append(maya.cmds.rename(shapes[0], '{}Shape'.format(short_name)))
+            node_shapes.append(cmds.rename(shapes[0], '{}Shape'.format(short_name)))
             if len(shapes) > 1:
                 i = 1
                 for s in shapes[1:]:
-                    node_shapes.append(maya.cmds.rename(s, '{}Shape{}'.format(short_name, i)))
+                    node_shapes.append(cmds.rename(s, '{}Shape{}'.format(short_name, i)))
                     i += 1
             renamed_shapes.append(node_shapes)
 
@@ -542,7 +548,7 @@ def get_shapes_in_hierarchy(
     """
 
     hierarchy = [transform_node]
-    relatives = maya.cmds.listRelatives(transform_node, ad=True, type='transform', f=full_path)
+    relatives = cmds.listRelatives(transform_node, ad=True, type='transform', f=full_path)
     if relatives:
         hierarchy.extend(relatives)
     if skip_first_relative:
@@ -557,7 +563,7 @@ def get_shapes_in_hierarchy(
             continue
         for found_shape in found_shapes:
             if not intermediate_shapes:
-                if maya.cmds.getAttr('{}.intermediateObject'.format(found_shape)):
+                if cmds.getAttr('{}.intermediateObject'.format(found_shape)):
                     continue
             if return_parent:
                 found_shape = child
@@ -579,16 +585,16 @@ def has_shape_of_type(node, shape_type):
 
     has_shape = None
 
-    if maya.cmds.objExists(node):
+    if cmds.objExists(node):
         has_shape = node
 
-    if not maya.cmds.objectType(node, isAType='shape'):
+    if not cmds.objectType(node, isAType='shape'):
         shapes = get_shapes(node)
         if shapes:
             has_shape = shapes[0]
 
     if has_shape:
-        if shape_type == maya.cmds.nodeType(has_shape):
+        if shape_type == cmds.nodeType(has_shape):
             return True
 
     return False
@@ -607,7 +613,7 @@ def scale_shapes(node, scale, use_pivot=True, relative=True):
     shapes = get_shapes(node, intermediates=False, full_path=True)
     comps = get_components_from_shapes(shapes)
     if use_pivot:
-        pivot = maya.cmds.xform(node, query=True, rp=True, ws=True)
+        pivot = cmds.xform(node, query=True, rp=True, ws=True)
     else:
         from tp.maya.cmds import transform
         bounding_box = transform.BoundingBox(comps)
@@ -616,14 +622,14 @@ def scale_shapes(node, scale, use_pivot=True, relative=True):
     if comps:
         if type(scale) in [list, tuple]:
             if relative:
-                maya.cmds.scale(scale[0], scale[1], scale[2], comps, pivot=pivot, r=True)
+                cmds.scale(scale[0], scale[1], scale[2], comps, pivot=pivot, r=True)
             else:
-                maya.cmds.scale(scale[0], scale[1], scale[2], comps, pivot=pivot, a=True)
+                cmds.scale(scale[0], scale[1], scale[2], comps, pivot=pivot, a=True)
         else:
             if relative:
-                maya.cmds.scale(scale, scale, scale, comps, pivot=pivot, r=True)
+                cmds.scale(scale, scale, scale, comps, pivot=pivot, r=True)
             else:
-                maya.cmds.scale(scale, scale, scale, comps, pivot=pivot, a=True)
+                cmds.scale(scale, scale, scale, comps, pivot=pivot, a=True)
 
 
 def filter_shapes_in_list(nodes_list, shapes_node_type_list=None):
@@ -639,11 +645,11 @@ def filter_shapes_in_list(nodes_list, shapes_node_type_list=None):
         return shapes_list
 
     shapes_node_type_list = shapes_node_type_list or get_shapes_types_with_color()
-    shapes_child_list = maya.cmds.listRelatives(nodes_list, shapes=True, type=shapes_node_type_list, fullPath=True)
+    shapes_child_list = cmds.listRelatives(nodes_list, shapes=True, type=shapes_node_type_list, fullPath=True)
 
     shapes_node_list = list()
     for node in nodes_list:
-        node_type = maya.cmds.nodeType(node)
+        node_type = cmds.nodeType(node)
         if node_type in shapes_node_type_list:
             shapes_node_list.append(node)
 
@@ -659,120 +665,131 @@ def filter_shapes_in_list(nodes_list, shapes_node_type_list=None):
     return shapes_list
 
 
-def translate_shape_cvs(nurbs_shape, translate_list):
+def translate_shape_cvs(nurbs_shape: str, translate_list: Sequence[float, float, float]):
     """
-    Translates given shape node by the given XYZ translation without affecting shape transform
-    :param nurbs_shape: str, shape node name
-    :param translate_list: list(float, float, float), XYZ translation as list
+    Translates given shape node by the given XYZ translation without affecting shape transform.
+
+    :param str nurbs_shape: shape node name.
+    :param Sequence[float, float, float] translate_list: XYZ translation as list.
     """
 
-    return maya.cmds.move(
+    return cmds.move(
         translate_list[0], translate_list[1], translate_list[2], '{}.cv[*]'.format(nurbs_shape),
         relative=True, objectSpace=True, worldSpaceDistance=True)
 
 
-def rotate_shape_cvs(nurbs_shape, rotate_list, relative=True, object_center_pivot=True):
+def rotate_shape_cvs(
+        nurbs_shape: str, rotate_list: Sequence[float, float, float], relative: bool = True,
+        object_center_pivot: bool = True):
     """
-    Rotates given shape node by the given XYZ rotation without affecting shape transform
-    :param nurbs_shape: str, shape node name
-    :param rotate_list: list(float, float, float), XYZ rotation as list
-    :param relative: bool, Whether to rotate CVs relative to the object space or not
-    :param object_center_pivot: bool, Whether to rotate the objects with the pivot centered in the object or the world
+    Rotates given shape node by the given XYZ rotation without affecting shape transform.
+
+    :param str nurbs_shape: shape node name.
+    :param Sequence[float, float, float] rotate_list: XYZ rotation as list.
+    :param bool relative: whether to rotate CVs relative to the object space.
+    :param bool object_center_pivot: whether to rotate the objects with the pivot centered in the object or the world.
     """
 
-    return maya.cmds.rotate(
+    return cmds.rotate(
         rotate_list[0], rotate_list[1], rotate_list[2], '{}.cv[*]'.format(nurbs_shape),
         objectCenterPivot=object_center_pivot, relative=relative)
 
 
-def scale_shape_cvs(nurbs_shape, scale_list):
+def scale_shape_cvs(nurbs_shape: str, scale_list: Sequence[float, float, float]):
     """
-    Scales given node by the given XYZ scale without affecting shape transform
-    :param nurbs_shape: str, shape node name
-    :param scale_list: list(float, float, float), XYZ scale as list
-    """
+    Scales given node by the given XYZ scale without affecting shape transform.
 
-    return maya.cmds.scale(scale_list[0], scale_list[1], scale_list[2], '{}.cv[*]'.format(nurbs_shape))
-
-
-def translate_node_shape_cvs(node_name, translate_list):
-    """
-    Translates given node shape CVSs by the given XYZ translation without affecting shape transform
-    :param node_name: str, node name
-    :param translate_list: list(float, float, float), XYZ translation as list
+    :param str nurbs_shape: shape node name.
+    :param Sequence[float, float, float] scale_list: XYZ scale as list.
     """
 
-    node_names = helpers.force_list(node_name)
+    return cmds.scale(scale_list[0], scale_list[1], scale_list[2], '{}.cv[*]'.format(nurbs_shape))
+
+
+def translate_nodes_cvs(node_names: list[str], translate_list: Sequence[float, float, float]):
+    """
+    Translates given node shape CVSs by the given XYZ translation without affecting shape transform.
+
+    :param list[str] node_names: list of node names.
+    :param Sequence[float, float, float] translate_list: XYZ translation as list.
+    """
+
     shapes_list = filtertypes.filter_transforms_shapes(node_names, shape_type='nurbsCurve')
     for shape in shapes_list:
         translate_shape_cvs(shape, translate_list)
 
 
-def rotate_node_shape_cvs(node_name, rotate_list, relative=True, object_center_pivot=True):
+def rotate_nodes_cvs(
+        node_names: list[str], rotate_list: Sequence[float, float, float], relative: bool = True,
+        object_center_pivot: bool = True):
     """
-    Rotates given node shape CVs by the given XYZ rotation without affecting shape transform
-    :param node_name: str, node name
-    :param rotate_list: list(float, float, float), XYZ rotation as list
-    :param relative: bool, Whether to rotate CVs relative to the object space or not
-    :param object_center_pivot: bool, Whether to rotate the objects with the pivot centered in the object or the world
+    Rotates given node shape CVs by the given XYZ rotation without affecting shape transform.
+
+    :param list[str] node_names: list of node names.
+    :param Sequence[float, float, float] rotate_list: XYZ rotation as list.
+    :param bool relative: whether to rotate CVs relative to the object space or not.
+    :param bool object_center_pivot: whether to rotate the objects with the pivot centered in the object or the world.
     """
 
-    node_names = helpers.force_list(node_name)
     shapes_list = filtertypes.filter_transforms_shapes(node_names, shape_type='nurbsCurve')
     for shape in shapes_list:
         rotate_shape_cvs(shape, rotate_list, relative=relative, object_center_pivot=object_center_pivot)
 
 
-def scale_node_shape_cvs(node_name, scale_list):
+def scale_nodes_cvs(node_names: list[str], scale_list: Sequence[float, float, float]):
     """
-    Scales given node shape CVs by the given XYZ scale without affecting shape transform
-    :param node_name: str, node name
-    :param scale_list: list(float, float, float), XYZ scale as list
+    Scales given node shape CVs by the given XYZ scale without affecting shape transform.
+
+    :param list[str] node_names: list of node names.
+    :param Sequence[float, float, float] scale_list: XYZ scale as list.
     """
 
-    node_names = helpers.force_list(node_name)
     shapes_list = filtertypes.filter_transforms_shapes(node_names, shape_type='nurbsCurve')
     for shape in shapes_list:
         scale_shape_cvs(shape, scale_list)
 
 
-def translate_selected_nodes_shape_cvs(translate_list):
+def translate_selected_nodes_cvs(translate_list: Sequence[float, float, float]):
     """
-    Translates current selected nodes shapes CVSs by the given XYZ translation without affecting shape transform
-    :param translate_list: list(float, float, float), XYZ translation as list
+    Translates current selected nodes shapes CVSs by the given XYZ translation without affecting shape transform.
+
+    :param Sequence[float, float, float] translate_list: XYZ translation as list.
     """
 
-    selected_nodes = maya.cmds.ls(sl=True, long=True)
+    selected_nodes = cmds.ls(sl=True, long=True)
     if not selected_nodes:
         return
 
-    return translate_node_shape_cvs(selected_nodes, translate_list)
+    return translate_nodes_cvs(selected_nodes, translate_list)
 
 
-def rotate_selected_node_shape_cvs(rotate_list, relative=True, object_center_pivot=True):
+def rotate_selected_nodes_cvs(
+        rotate_list: Sequence[float, float, float], relative: bool = True, object_center_pivot: bool = True):
     """
-    Rotates current selected nodes shapes CVs by the given XYZ rotation without affecting shape transform
-    :param rotate_list: list(float, float, float), XYZ rotation as list
-    :param relative: bool, Whether to rotate CVs relative to the object space or not
-    :param object_center_pivot: bool, Whether to rotate the objects with the pivot centered in the object or the world
+    Rotates current selected nodes shapes CVs by the given XYZ rotation without affecting shape transform.
+
+    :param Sequence[float, float, float] rotate_list: XYZ rotation as list.
+    :param bool relative: whether to rotate CVs relative to the object space or not.
+    :param bool object_center_pivot: whether to rotate the objects with the pivot centered in the object or the world.
     """
 
-    selected_nodes = maya.cmds.ls(sl=True, long=True)
+    selected_nodes = cmds.ls(sl=True, long=True)
     if not selected_nodes:
         return
 
-    return rotate_node_shape_cvs(
+    return rotate_nodes_cvs(
         selected_nodes, rotate_list, relative=relative, object_center_pivot=object_center_pivot)
 
 
-def scale_selected_node_shape_cvs(scale_list):
+def scale_selected_nodes_cvs(scale_list: Sequence[float, float, float]):
     """
-    Scales current selected nodes shapes CVs by the given XYZ scale without affecting shape transform
-    :param scale_list: list(float, float, float), XYZ scale as list
+    Scales current selected nodes shapes CVs by the given XYZ scale without affecting shape transform.
+
+    :param Sequence[float, float, float] scale_list: XYZ scale as list.
     """
 
-    selected_nodes = maya.cmds.ls(sl=True, long=True)
+    selected_nodes = cmds.ls(sl=True, long=True)
     if not selected_nodes:
         return
 
-    return scale_node_shape_cvs(selected_nodes, scale_list)
+    return scale_nodes_cvs(selected_nodes, scale_list)

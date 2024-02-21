@@ -5,8 +5,10 @@
 Utility methods related to Maya Curves
 """
 
-import maya.cmds
-import maya.api.OpenMaya
+from __future__ import annotations
+
+import maya.cmds as cmds
+import maya.api.OpenMaya as OpenMaya
 
 from tp.core import log
 from tp.common.python import helpers, strings
@@ -14,7 +16,8 @@ from tp.common.math import scalar, vec3
 from tp.maya import api
 from tp.maya.api import curves as api_curves
 from tp.maya.cmds import exceptions, transform, component, decorators, filtertypes, name as name_utils
-from tp.maya.cmds import shape as shape_utils, node as node_utils
+from tp.maya.cmds import shape as shape_utils
+from tp.maya.om import nodes
 
 logger = log.tpLogger
 
@@ -37,7 +40,7 @@ def is_a_curve(curve):
     :return: bool
     """
 
-    if maya.cmds.objExists('{}.cv[0]'.format(curve)) and not maya.cmds.objExists('{}.cv[0][0]'.format(curve)):
+    if cmds.objExists('{}.cv[0]'.format(curve)) and not cmds.objExists('{}.cv[0][0]'.format(curve)):
         return True
 
     return False
@@ -50,12 +53,12 @@ def is_curve(curve):
     :return: bool, True if the given object is a valid curve or False otherwise
     """
 
-    if not maya.cmds.objExists(curve):
+    if not cmds.objExists(curve):
         return False
 
-    if maya.cmds.objectType(curve) == 'transform':
-        curve = maya.cmds.listRelatives(curve, shapes=True, noIntermediate=True, pa=True)
-    if maya.cmds.objectType(curve) != 'nurbsCurve' and maya.cmds.objectType(curve) != 'bezierCurve':
+    if cmds.objectType(curve) == 'transform':
+        curve = cmds.listRelatives(curve, shapes=True, noIntermediate=True, pa=True)
+    if cmds.objectType(curve) != 'nurbsCurve' and cmds.objectType(curve) != 'bezierCurve':
         return False
 
     return True
@@ -69,8 +72,8 @@ def is_cv_count_same(source_curve, target_curve):
     :return: bool
     """
 
-    source_cvs = len(maya.cmds.ls('{}.cv[*]'.format(source_curve)), flatten=True)
-    target_cvs = len(maya.cmds.ls('{}.cv[*]'.format(target_curve)), flatten=True)
+    source_cvs = len(cmds.ls('{}.cv[*]'.format(source_curve)), flatten=True)
+    target_cvs = len(cmds.ls('{}.cv[*]'.format(target_curve)), flatten=True)
 
     return source_cvs == target_cvs
 
@@ -84,12 +87,12 @@ def get_curve_fn(curve):
 
     check_curve(curve)
 
-    if maya.cmds.objectType(curve) == 'transform':
-        curve = maya.cmds.listRelatives(curve, shapes=True, noIntermediate=True)[0]
+    if cmds.objectType(curve) == 'transform':
+        curve = cmds.listRelatives(curve, shapes=True, noIntermediate=True)[0]
 
-    curve_sel = maya.api.OpenMaya.MGlobal.getSelectionListByName(curve)
+    curve_sel = OpenMaya.MGlobal.getSelectionListByName(curve)
     curve_path = curve_sel.getDagPath(0)
-    curve_fn = maya.api.OpenMaya.MFnNurbsCurve(curve_path)
+    curve_fn = OpenMaya.MFnNurbsCurve(curve_path)
 
     return curve_fn
 
@@ -105,12 +108,12 @@ def create_from_point_list(point_list, degree=3, name=''):
 
     cv_list = [transform.get_position(i) for i in point_list]
 
-    crv = maya.cmds.curve(p=cv_list, k=range(len(cv_list)), d=1)
+    crv = cmds.curve(p=cv_list, k=range(len(cv_list)), d=1)
     name = name or 'curve_from_points'
-    crv = maya.cmds.rename(crv, name)
+    crv = cmds.rename(crv, name)
 
     if degree > 1:
-        crv = maya.cmds.rebuildCurve(crv, d=degree, kcp=True, kr=0, ch=False, rpo=True)[0]
+        crv = cmds.rebuildCurve(crv, d=degree, kcp=True, kr=0, ch=False, rpo=True)[0]
 
     return crv
 
@@ -130,18 +133,18 @@ def create_curve_from_mesh_edge_loop(
 
     if not mesh_edge_list:
         raise Exception('Invalid mesh edge list provided!')
-    mesh_edge_list = maya.cmds.ls(mesh_edge_list, flatten=True)
+    mesh_edge_list = cmds.ls(mesh_edge_list, flatten=True)
 
     if not name:
         name = '{}Curve'.format(strings.strip_suffix(mesh_edge_list[0].split('.')[0]))
 
     curve_degree = 3 if rebuild else 1
-    new_curve = maya.cmds.polyToCurve(form=form, degree=curve_degree, ch=keep_history)[0]
+    new_curve = cmds.polyToCurve(form=form, degree=curve_degree, ch=keep_history)[0]
     if rebuild and rebuild_spans:
-        new_curve = maya.cmds.rebuildCurve(
+        new_curve = cmds.rebuildCurve(
             new_curve, rpo=1, rt=0, end=1, kr=0, kcp=1, kep=1, kt=1,
             s=rebuild_spans, d=3, tol=0.01, ch=keep_history)[0]
-    new_curve = maya.cmds.rename(new_curve, name or 'curveFromEdgeLoop')
+    new_curve = cmds.rename(new_curve, name or 'curveFromEdgeLoop')
 
     return new_curve
 
@@ -181,16 +184,16 @@ def transforms_to_curve(transforms, spans=None, name='from_transforms'):
 
     transform_positions = list()
     for xform in transforms:
-        xform_pos = maya.cmds.xform(xform, q=True, ws=True, rp=True)
+        xform_pos = cmds.xform(xform, q=True, ws=True, rp=True)
         transform_positions.append(xform_pos)
 
-    curve = maya.cmds.curve(p=transform_positions, degree=1)
+    curve = cmds.curve(p=transform_positions, degree=1)
     if spans:
-        maya.cmds.rebuildCurve(
+        cmds.rebuildCurve(
             curve, ch=False, rpo=True, rt=0, end=1, kr=False, kcp=False, kep=True,
             kt=False, spans=spans, degree=3, tol=0.01)
-    curve = maya.cmds.rename(curve, name_utils.find_unique_name(name))
-    maya.cmds.setAttr('{}.inheritsTransform'.format(curve), False)
+    curve = cmds.rename(curve, name_utils.find_unique_name(name))
+    cmds.setAttr('{}.inheritsTransform'.format(curve), False)
 
     return curve
 
@@ -249,11 +252,11 @@ def get_curve_length_from_parameter(curve, parameter_value):
     :return:
     """
 
-    arc_node = maya.cmds.arcLengthDimension('{}.u[{}]'.format(curve, parameter_value))
-    length = maya.cmds.getAttr('{}.arcLength'.format(arc_node))
-    parent = maya.cmds.listRelatives(arc_node, p=True)
+    arc_node = cmds.arcLengthDimension('{}.u[{}]'.format(curve, parameter_value))
+    length = cmds.getAttr('{}.arcLength'.format(arc_node))
+    parent = cmds.listRelatives(arc_node, p=True)
     if parent:
-        maya.cmds.delete(parent[0])
+        cmds.delete(parent[0])
 
     return length
 
@@ -266,7 +269,7 @@ def get_point_from_curve_parameter(curve, parameter):
     :return: list(float, float, float), vector found at the parameter of the curve
     """
 
-    return maya.cmds.pointOnCurve(curve, pr=parameter, ch=False)
+    return cmds.pointOnCurve(curve, pr=parameter, ch=False)
 
 
 def get_curve_position_from_parameter(curve, parameter):
@@ -292,9 +295,9 @@ def rebuild_curve(curve, spans=-1, degree=3):
     """
 
     if spans == -1:
-        spans = maya.cmds.getAttr('{}.spans'.format(curve))
+        spans = cmds.getAttr('{}.spans'.format(curve))
 
-    curve = maya.cmds.rebuildCurve(curve, ch=False, rpo=True, rt=False, end=True, kr=False,
+    curve = cmds.rebuildCurve(curve, ch=False, rpo=True, rt=False, end=True, kr=False,
                                    kcp=False, kep=True, kt=False, s=spans, d=degree, tol=0.01)
 
     return curve
@@ -311,7 +314,7 @@ def rebulid_curve_at_distance(curve, min_length, max_length, min_spans=3, max_sp
     :return: str
     """
 
-    curve_length = maya.cmds.arcLen(curve, ch=False)
+    curve_length = cmds.arcLen(curve, ch=False)
     spans = scalar.remap_value(curve_length, min_length, max_length, min_spans, max_spans)
 
     return rebuild_curve(curve, spans=spans, degree=3)
@@ -324,7 +327,7 @@ def evenly_position_curve_cvs(curve):
     :return: str
     """
 
-    cvs = maya.cmds.ls('{}.cv[*}'.format(curve), flatten=True)
+    cvs = cmds.ls('{}.cv[*}'.format(curve), flatten=True)
 
     return snap_transforms_to_curve(cvs, curve)
 
@@ -337,26 +340,26 @@ def snap_transforms_to_curve(transforms, curve):
     """
 
     count = len(transforms)
-    total_length = maya.cmds.arclen(curve)
+    total_length = cmds.arclen(curve)
     part_length = total_length / (count - 1)
     current_length = 0.0
     if count - 1 == 0:
         part_length = 0
-    temp_curve = maya.cmds.duplicate(curve)[0]
+    temp_curve = cmds.duplicate(curve)[0]
 
     for i in range(0, count):
         param = get_parameter_from_curve_length(temp_curve, current_length)
         pos = get_point_from_curve_parameter(temp_curve, param)
         xform = transforms[i]
-        if maya.cmds.nodeType(xform) == 'joint':
-            maya.cmds.move(
+        if cmds.nodeType(xform) == 'joint':
+            cmds.move(
                 pos[0], pos[1], pos[2], '{}.scalePivot'.format(xform), '{}.rotatePivot'.format(xform), a=True)
         else:
-            maya.cmds.xform(xform, ws=True, t=pos)
+            cmds.xform(xform, ws=True, t=pos)
 
         current_length += part_length
 
-    maya.cmds.delete(temp_curve)
+    cmds.delete(temp_curve)
 
 
 @decorators.undo_chunk
@@ -374,20 +377,20 @@ def snap_joints_to_curve(joints, curve=None, count=10):
     if not joints:
         return
 
-    # List that will contains temporary objects that will be removed when the snapping process is over
+    # List that will contain temporary objects that will be removed when the snapping process is over
     delete_after = list()
 
     if not curve:
-        curve = transforms_to_curve(joints, spans=count, description='temp')
+        curve = transforms_to_curve(joints, spans=count, name='temp')
         delete_after.append(curve)
 
     joint_count = len(joints)
     if joint_count < count and count:
         missing_count = count - joint_count
         for i in range(missing_count):
-            new_jnt = maya.cmds.duplicate(joints[-1])[0]
-            new_jnt = maya.cmds.rename(new_jnt, name_utils.find_unique_name(joints[-1]))
-            maya.cmds.parent(new_jnt, joints[-1])
+            new_jnt = cmds.duplicate(joints[-1])[0]
+            new_jnt = cmds.rename(new_jnt, name_utils.find_unique_name(joints[-1]))
+            cmds.parent(new_jnt, joints[-1])
             joints.append(new_jnt)
     joint_count = len(joints)
     if not joint_count:
@@ -396,7 +399,7 @@ def snap_joints_to_curve(joints, curve=None, count=10):
     if count == 0:
         count = joint_count
 
-    total_length = maya.cmds.arclen(curve)
+    total_length = cmds.arclen(curve)
     part_length = total_length / (count - 1)
     current_length = 0.0
     if count - 1 == 0:
@@ -405,12 +408,12 @@ def snap_joints_to_curve(joints, curve=None, count=10):
     for i in range(count):
         param = get_parameter_from_curve_length(curve, current_length)
         pos = get_point_from_curve_parameter(curve, param)
-        maya.cmds.move(
+        cmds.move(
             pos[0], pos[1], pos[2], '{}.scalePivot'.format(joints[i]), '{}.rotatePivot'.format(joints[i], a=True))
         current_length += part_length
 
     if delete_after:
-        maya.cmds.delete(delete_after)
+        cmds.delete(delete_after)
 
 
 def attach_to_curve(transform, curve, maintain_offset=False, parameter=None):
@@ -423,27 +426,27 @@ def attach_to_curve(transform, curve, maintain_offset=False, parameter=None):
     :return: str, name of the pointOnCurveInfo node
     """
 
-    position = maya.cmds.xform(transform, query=True, ws=True, rp=True)
+    position = cmds.xform(transform, query=True, ws=True, rp=True)
     if not parameter:
         parameter = get_closest_parameter_on_curve(curve, position)
 
-    curve_info_node = maya.cmds.pointOnCurve(curve, pr=parameter, ch=True)
+    curve_info_node = cmds.pointOnCurve(curve, pr=parameter, ch=True)
 
     if maintain_offset:
-        plus_node = maya.cmds.createNode('plusMinusAverage', n='{}_subtract_offset'.format(transform))
-        maya.cmds.setAttr('{}.operation'.format(plus_node), 1)
+        plus_node = cmds.createNode('plusMinusAverage', n='{}_subtract_offset'.format(transform))
+        cmds.setAttr('{}.operation'.format(plus_node), 1)
         for axis in 'XYZ':
-            value = maya.cmds.getAttr('{}.position{}'.format(curve_info_node, axis))
-            value_orig = maya.cmds.getAttr('{}.translate{}'.format(transform, axis))
-            maya.cmds.connectAttr('{}.position{}'.format(curve_info_node, axis), '{}.input3D[0].input3D{}'.format(
+            value = cmds.getAttr('{}.position{}'.format(curve_info_node, axis))
+            value_orig = cmds.getAttr('{}.translate{}'.format(transform, axis))
+            cmds.connectAttr('{}.position{}'.format(curve_info_node, axis), '{}.input3D[0].input3D{}'.format(
                 plus_node, axis.lower()))
-            maya.cmds.setAttr('{}.input3D[1].input3D{}'.format(plus_node, axis.lower()), -value)
-            maya.cmds.setAttr('{}.input3D[2].input3D{}'.format(plus_node, axis.lower()), value_orig)
-            maya.cmds.connectAttr(
+            cmds.setAttr('{}.input3D[1].input3D{}'.format(plus_node, axis.lower()), -value)
+            cmds.setAttr('{}.input3D[2].input3D{}'.format(plus_node, axis.lower()), value_orig)
+            cmds.connectAttr(
                 '{}.output3D{}'.format(plus_node, axis.lower()), '{}.translate{}'.format(transform, axis))
     else:
         for axis in 'XYZ':
-            maya.cmds.connectAttr(
+            cmds.connectAttr(
                 '{}.position{}'.format(curve_info_node, axis), '{}.translate{}'.format(transform, axis))
 
     return curve_info_node
@@ -460,20 +463,20 @@ def snap_curve_to_surface(curve, surface, offset=1, project=False):
 
     from tp.maya.cmds import mesh
 
-    center = maya.cmds.xform(curve, query=True, ws=True, rp=True)
+    center = cmds.xform(curve, query=True, ws=True, rp=True)
     shapes = shape_utils.get_shapes(curve)
     for shape in shapes:
-        cvs = maya.cmds.ls('{}.cv[*]'.format(shape), flatten=True)
+        cvs = cmds.ls('{}.cv[*]'.format(shape), flatten=True)
         for cv in cvs:
-            pos = maya.cmds.xform(cv, query=True, ws=True, t=True)
+            pos = cmds.xform(cv, query=True, ws=True, t=True)
             if mesh.is_a_mesh(surface):
                 mesh_fn = api.MeshFunction(surface)
                 if project:
                     closest_point = mesh_fn.get_closest_intersection(pos, center)
                 else:
                     closest_point = mesh_fn.get_closest_position(pos)
-                maya.cmds.xform(cv, ws=True, t=closest_point)
-        maya.cmds.scale(offset, offset, offset, cvs, r=True)
+                cmds.xform(cv, ws=True, t=closest_point)
+        cmds.scale(offset, offset, offset, cvs, r=True)
 
 
 def snap_project_curve_to_surface(curve, surface, offset=1):
@@ -498,27 +501,27 @@ def curve_to_nurbs_surface(curve, description, spans=-1, offset_axis='X', offset
     :return: str, newly created NURBS surface
     """
 
-    curve1 = maya.cmds.duplicate(curve)[0]
-    curve2 = maya.cmds.duplicate(curve)[0]
+    curve1 = cmds.duplicate(curve)[0]
+    curve2 = cmds.duplicate(curve)[0]
     offset_axis = offset_axis.upper()
     pos_move = vec3.get_axis_vector(offset_axis, offset_amount)
     neg_move = vec3.get_axis_vector(offset_axis, offset_amount * -1)
-    maya.cmds.move(pos_move[0], pos_move[1], pos_move[2], curve1)
-    maya.cmds.move(neg_move[0], neg_move[1], neg_move[2], curve2)
+    cmds.move(pos_move[0], pos_move[1], pos_move[2], curve1)
+    cmds.move(neg_move[0], neg_move[1], neg_move[2], curve2)
     curves = [curve1, curve2]
 
     if not spans == -1:
         for curve in curves:
-            maya.cmds.rebuildCurve(
+            cmds.rebuildCurve(
                 curve, ch=False, rpo=True, rt=0, end=1, kr=False,
                 kcp=False, kep=True, kt=False, spans=spans, degree=3, tol=0.01)
 
-    loft = maya.cmds.loft(
-        curve1, curve2, n=name_utils.find_unique_name('nurbsSurface_{}'.forat(description)), ss=1, degree=1, ch=False)
-    spans = maya.cmds.getAttr('{}.spans'.format(curve1))
-    maya.cmds.rebuildSurface(
+    loft = cmds.loft(
+        curve1, curve2, n=name_utils.find_unique_name(f'nurbsSurface_{description}'), ss=1, degree=1, ch=False)
+    spans = cmds.getAttr('{}.spans'.format(curve1))
+    cmds.rebuildSurface(
         loft, ch=False, rpo=1, rt=0, end=1, kr=0, kcp=0, kc=0, su=1, du=1, sv=spans, dv=3, tol=0.01, fr=0, dir=2)
-    maya.cmds.delete(curve1, curve2)
+    cmds.delete(curve1, curve2)
 
     return loft[0]
 
@@ -531,17 +534,17 @@ def set_shapes_as_text_curve(transform, text_string):
     """
 
     shapes = shape_utils.get_shapes(transform)
-    maya.cmds.delete(shapes)
-    text = maya.cmds.textCurves(ch=False, f='Arial|w400|h-1', t=text_string)
-    maya.cmds.makeIdentity(text, apply=True, t=True)
-    transforms = maya.cmds.listRelatives(text, ad=True, type='transform')
+    cmds.delete(shapes)
+    text = cmds.textCurves(ch=False, f='Arial|w400|h-1', t=text_string)
+    cmds.makeIdentity(text, apply=True, t=True)
+    transforms = cmds.listRelatives(text, ad=True, type='transform')
     for text_transform in transforms:
         shapes = shape_utils.get_shapes(text_transform)
         if not shapes:
             continue
         for shape in shapes:
-            maya.cmds.parent(shape, transform, r=True, s=True)
-    maya.cmds.delete(text)
+            cmds.parent(shape, transform, r=True, s=True)
+    cmds.delete(text)
     shape_utils.rename_shapes(transform)
 
 
@@ -555,13 +558,13 @@ def get_curve_shape(curve, shape_index=0):
 
     if curve.find('.vtx'):
         curve = curve.split('.')[0]
-    if maya.cmds.nodeType(curve) == 'nurbsCurve':
-        curve = maya.cmds.listRelatives(curve, p=True)[0]
+    if cmds.nodeType(curve) == 'nurbsCurve':
+        curve = cmds.listRelatives(curve, p=True)[0]
 
     shapes = shape_utils.get_shapes(curve)
     if not shapes:
         return
-    if not maya.cmds.nodeType(shapes[0]) == 'nurbsCurve':
+    if not cmds.nodeType(shapes[0]) == 'nurbsCurve':
         return
 
     shape_count = len(shapes)
@@ -585,10 +588,10 @@ def get_curves_in_list(dg_nodes_list):
     found_curves = list()
 
     for dg_node in dg_nodes_list:
-        if maya.cmds.nodeType(dg_node) == 'nurbsCurve':
-            found_curve = maya.cmds.listRelatives(dg_node, p=True)
+        if cmds.nodeType(dg_node) == 'nurbsCurve':
+            found_curve = cmds.listRelatives(dg_node, p=True)
             found_curves.append(found_curve)
-        if maya.cmds.nodeType(dg_node) == 'transform':
+        if cmds.nodeType(dg_node) == 'transform':
             shapes = get_curve_shape(dg_node)
             if shapes:
                 found_curves.append(dg_node)
@@ -602,7 +605,7 @@ def get_selected_curves():
     :return: list(str)
     """
 
-    selection = maya.cmds.ls(sl=True)
+    selection = cmds.ls(sl=True)
 
     return get_curves_in_list(selection)
 
@@ -623,13 +626,13 @@ def move_cvs(curves, position, pivot_at_center=False):
         else:
             curve_cvs = '{}.cv[*]'.format(curve)
         if shape_utils.is_a_shape(curve):
-            curve = maya.cmds.listRelatives(curve, p=True)[0]
+            curve = cmds.listRelatives(curve, p=True)[0]
         if pivot_at_center:
             center_position = transform.get_center(curve_cvs)
         else:
-            center_position = maya.cmds.xform(curve, query=True, ws=True, rp=True)
+            center_position = cmds.xform(curve, query=True, ws=True, rp=True)
         offset = vec3.vector_sub(position, center_position)
-        maya.cmds.move(offset[0], offset[1], offset[2], curve_cvs, ws=True, r=True)
+        cmds.move(offset[0], offset[1], offset[2], curve_cvs, ws=True, r=True)
 
 
 def get_curve_line_thickness(curve_transform):
@@ -643,20 +646,20 @@ def get_curve_line_thickness(curve_transform):
     if not curve_shapes:
         return 0
 
-    return maya.cmds.getAttr('{}.lineWidth'.format(curve_shapes[0]))
+    return cmds.getAttr('{}.lineWidth'.format(curve_shapes[0]))
 
 
-def set_curve_line_thickness(curve_transforms, line_width):
+def set_curves_line_thickness(curve_transforms: list[str], line_width: int):
     """
-    Sets the line width of the given curves
-    :param curve_transforms: str or list(str), curves we want to modify line width of
-    :param line_width: float, new line width of the curves
+    Sets the line width of the given curves.
+
+    :param list[str] curve_transforms: curves we want to modify line width of.
+    :param float line_width: new line width of the curves.
     """
 
-    curve_transforms = helpers.force_list(curve_transforms)
     curve_shapes = filtertypes.filter_nodes_with_shapes(curve_transforms, shape_type='nurbsCurve')
     for curve in curve_shapes:
-        maya.cmds.setAttr('{}.lineWidth'.format(curve), line_width)
+        cmds.setAttr(f'{curve}.lineWidth', line_width)
 
 
 def get_curve_data(curve_shape, space=None):
@@ -667,10 +670,10 @@ def get_curve_data(curve_shape, space=None):
     :return: dict
     """
 
-    space = space or maya.api.OpenMaya.MSpace.kObject
+    space = space or OpenMaya.MSpace.kObject
 
     if helpers.is_string(curve_shape):
-        curve_shape = node_utils.get_mobject(curve_shape)
+        curve_shape = nodes.mobject(curve_shape)
 
     return api_curves.get_curve_data(curve_shape, space)
 
@@ -681,7 +684,7 @@ def find_shortest_path_between_curve_cvs(cvs_list):
     end = cvs_list[-1]
     curve = start.split('.')[0]
 
-    obj_type = maya.cmds.objectType(curve)
+    obj_type = cmds.objectType(curve)
     if obj_type != 'nurbsCurve':
         return None
 

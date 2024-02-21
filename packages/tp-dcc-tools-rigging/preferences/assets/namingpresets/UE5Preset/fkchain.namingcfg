@@ -1,0 +1,15 @@
+{
+  "name": "fkchain",
+  "description": "",
+  "rules": [
+    {
+      "name": "skinJointName",
+      "creator": "Tomi Poveda",
+      "description": "Deformation joint chain name.",
+      "expression": "{componentName}_{side}",
+      "exampleFields": {"componentName": "arm", "side": "L", "id": "upr", "type": "joint"
+      }
+    }
+  ],
+  "tokens": []
+}

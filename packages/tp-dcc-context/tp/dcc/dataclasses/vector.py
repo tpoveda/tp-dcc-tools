@@ -13,7 +13,7 @@ logger = log.tpLogger
 
 
 @dataclasses.dataclass
-class Vector(dataclass.AbstractDataClass):
+class Vector(dataclass.ADataClass):
     """
     Data class for 3D vectors.
     """

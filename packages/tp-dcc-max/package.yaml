@@ -3,7 +3,7 @@ version: '1.0.0'
 required: True
 author: 'Tomas Poveda'
 authorEmail: 'tpovedatd@gmail.com'
-description: '3ds Max package for tpDcc Tools framework'
+description: '3ds Max package for tp-dcc Tools framework'
 displayName: 'tpDcc 3ds Max'
 environment:
   PYTHONPATH:

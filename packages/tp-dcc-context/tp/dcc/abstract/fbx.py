@@ -5,9 +5,9 @@ import abc
 from tp.dcc.abstract import base
 
 
-class AbstractFbx(base.AbstractBase):
+class AFnFbx(base.AFnBase):
     """
-    Overloads of AbstractBase context class to handle behaviour for DCC FBX operations
+    Overloads of AFnBase function set class to handle behaviour for DCC FBX operations.
     """
 
     __slots__ = ()
@@ -41,3 +41,5 @@ class AbstractFbx(base.AbstractBase):
         :return: True if export selection operation was successful; False otherwise.
         :rtype: bool
         """
+
+        pass

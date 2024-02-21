@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import math
-from typing import List, Iterator
+from typing import Iterator
 
 import maya.cmds as cmds
 import maya.api.OpenMaya as OpenMaya
@@ -212,17 +212,17 @@ def name(mobj: OpenMaya.MObject, partial_name: bool = False, include_namespace: 
 	return node_name
 
 
-def names_from_mobject_handles(handles_list: List[OpenMaya.MObjectHandle]) -> List[str]:
+def names_from_mobjs(mobjs: list[OpenMaya.MObject]) -> list[str]:
 	"""
 	Returns names of the given list of Maya object handles.
 
-	:param List[OpenMaya.MObjectHandle] handles_list: list of Maya object handles to retrieve names of.
+	:param list[OpenMaya.MObject] mobjs: list of Maya objects to retrieve names of.
 	:return: list of names.
-	:rtype: List[str]
+	:rtype: list[str]
 	"""
 
-	names_list = list()
-	for mobj in handles_list:
+	names_list: list[str] = []
+	for mobj in mobjs:
 		object_handle = OpenMaya.MObjectHandle(mobj)
 		if not object_handle.isValid() or not object_handle.isAlive():
 			continue
@@ -246,19 +246,21 @@ def set_names(nodes, names):
 		OpenMaya.MFnDagNode(node).setName(node_name)
 
 
-def rename(mobj, new_name, mod=None, apply=True):
+def rename(
+		mobj: OpenMaya.MObject, new_name: str, mod: OpenMaya.MDagModifier | None = None,
+		apply: bool = True) -> OpenMaya.MObject:
 	"""
 	Renames given MObject dependency node with the new given name.
 
 	:param OpenMaya.MObject mobj: Maya object to rename.
 	:param str new_name: new Maya object name.
-	:param OpenMaya.MDGModifier mod: Maya modifier to rename Maya object with.
+	:param OpenMaya.MDagModifier or None mod: optional Maya modifier to rename Maya object with.
 	:param bool apply: whether to apply changes instantly.
 	:return: renamed Maya object.
 	:rtype: OpenMaya.MObject
 	"""
 
-	dag_mod = mod or OpenMaya.MDGModifier()
+	dag_mod = mod or OpenMaya.MDagModifier()
 	dag_mod.renameNode(mobj, new_name)
 	if mod is None and apply:
 		dag_mod.doIt()

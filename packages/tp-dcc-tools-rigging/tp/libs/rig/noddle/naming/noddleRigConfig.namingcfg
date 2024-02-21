@@ -1,0 +1,63 @@
+{
+  "name": "noddleRigConfig",
+  "description": "",
+  "rules": [
+    {
+      "name": "rigHrc",
+      "creator": "Tomi Poveda",
+      "description": "Convention for the top node for the Rig",
+      "expression": "{rigName}_{type}",
+      "exampleFields": {"rigName": "Robot", "type": "hrc"}
+    },
+    {
+      "name": "rigMeta",
+      "creator": "Tomi Poveda",
+      "description": "Convention for the top node for the Rig",
+      "expression": "{rigName}_{type}",
+      "exampleFields": {"rigName": "Robot", "type": "meta"}
+    },
+    {
+      "name":"rootSelectionSet",
+      "creator": "Tomi Poveda",
+      "description": "Root Rig selection set name",
+      "expression": "{rigName}_{type}",
+      "exampleFields": {"rigName": "Robot", "selectionSet": "root", "type": "objectSet"}
+    },
+    {
+      "name": "selectionSet",
+      "creator": "Tomi Poveda",
+      "description": "Root selection set names",
+      "expression": "{rigName}_{selectionSet}_{type}",
+      "exampleFields": {"rigName": "Robot", "selectionSet": "ctrls", "type": "objectSet"}
+    },
+    {
+      "name": "layerHrc",
+      "creator": "Tomi Poveda",
+      "description": "Noddle rig Layer Hrc node name.",
+      "expression": "{rigName}_{layerType}_{type}",
+      "exampleFields": {"rigName":  "Robot",  "layerType": "rigLayer", "type": "hrc"}
+    },
+    {
+      "name": "layerMeta",
+      "creator": "Tomi Poveda",
+      "description": "Noddle rig Layer Meta node name.",
+      "expression": "{rigName}_{layerType}_{type}",
+      "exampleFields": {"rigName":  "Robot",  "layerType": "componentLayer", "type": "meta"}
+    },
+    {
+      "name": "controlDisplayLayerSuffix",
+      "creator": "Tomi Poveda",
+      "description": "Convention for the rigs control displayLayer",
+      "expression": "{rigName}_{type}",
+      "exampleFields": {"rigName":  "Robot", "type": "displayLayer"}
+    },
+    {
+      "name": "object",
+      "creator": "Tomi Poveda",
+      "description": "Standard Maya node type convention, used for utility nodes or any node which does not have an explicit Rule",
+      "expression": "{rigName}_{section}_{type}",
+      "exampleFields": {"rigName": "Robot","section": "world", "system":"ik", "type": "transform"}
+        }
+  ],
+  "tokens": []
+}

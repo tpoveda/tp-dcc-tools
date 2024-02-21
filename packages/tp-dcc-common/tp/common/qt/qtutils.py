@@ -1422,23 +1422,25 @@ def iterate_parents(widget):
         yield parent
 
 
-def iterate_children(widget, skip=None, qobj_class=None):
+def iterate_children(widget: QWidget, skip: str | None = None, qobj_class: type | None = None) -> Iterator[QWidget]:
     """
-    Yields all descendant widgets depth first of the given widget
-    :param widget: QWWidget, widget to iterate through
-    :param skip: str, if the widget has this property, children will be skip
-    :param qobj_class:
-    :return:
+    Generator function that yields all descendant widgets depth first of the given widget.
+
+    :param QWidget widget: widget to iterate through.
+    :param str or None skip: if the widget has this property, children will be skipped.
+    :param type qobj_class: optional class to filter widgets by.
+    :return: iterated descendants widgets.
+    :rtype: Iterator[QWidget]
     """
 
     for child in widget.children():
         yield child
-        if skip is not None and child.property(skip) is not None:
+        if skip is not None and child.property(skip):
             continue
         if qobj_class is not None and not isinstance(child, qobj_class):
             continue
-        for grand_cihld in iterate_children(widget=child, skip=skip):
-            yield grand_cihld
+        for grand_child in iterate_children(widget=child, skip=skip):
+            yield grand_child
 
 
 def is_stackable(widget):

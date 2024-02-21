@@ -13,15 +13,15 @@ from tp.common.python import generators, decorators
 logger = log.tpLogger
 
 
-class AbstractBase(abc.ABC):
+class AFnBase(abc.ABC):
     """
-    Abstract class for all DCC context classes
+    Abstract class for all DCC context classes.
     """
 
     __slots__ = ('_object', '_queue')
     __array_index_type__ = abstract.ArrayIndexType.ZeroBased
 
-    def __init__(self, *args):
+    def __init__(self, *args, **kwargs):
         super().__init__()
 
         # Declare class variables.
@@ -42,31 +42,29 @@ class AbstractBase(abc.ABC):
         self.set_object(obj)
         return self
 
-    def __getattribute__(self, name: str):
-
+    def __getattribute__(self, name: str) -> Any:
         # Get class definition to check whether if this is an instance method
         cls = super().__getattribute__('__class__')
         obj = getattr(cls, name)
-        if not inspect.isfunction(obj) or hasattr(AbstractBase, name):
+        if not inspect.isfunction(obj) or hasattr(AFnBase, name):
             return super().__getattribute__(name)
 
-        # Check whether function set is valid
+        # Check whether function set is valid.
         func = super().__getattribute__('is_valid')
         is_valid = func()
-
         if is_valid:
             return super().__getattribute__(name)
         else:
             raise TypeError(f'__getattribute__() function set object does not exist for {func.__name__}!')
 
     def __eq__(self, other: Any) -> bool:
-        if isinstance(other, AbstractBase):
+        if isinstance(other, AFnBase):
             return self.object() == other.object()
 
         return self.object() == other
 
     def __ne__(self, other: Any) -> bool:
-        if isinstance(other, AbstractBase):
+        if isinstance(other, AFnBase):
             return self.object() != other.object()
 
         return self.object() != other

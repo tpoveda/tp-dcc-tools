@@ -7,6 +7,7 @@ import maya.api.OpenMaya as OpenMaya
 
 from tp.maya.api import consts, base, contexts, curves
 from tp.maya.om import factory
+from tp.maya.cmds import decorators
 
 
 def create_dag_node(
@@ -241,3 +242,48 @@ def create_nurbs_curve_from_points(
         base.node_by_name(spline_curve_transform),
         [base.node_by_name(i) for i in created_shapes if i != spline_curve_transform]
     )
+
+
+@decorators.restore_selection
+def create_poly_plane(name, **kwargs) -> list[base.DagNode]:
+    """
+    Creates a single polygon plane.
+
+    :param str name: name for the polygon plane.
+    :param kwargs: extra keyword arguments (similar to the ones accepted by cmds.polyPlane command).
+    :return: newly created poly plane node instance.
+    :rtype: base.DagNode
+    """
+
+    poly_plane = cmds.polyPlane(name=name, **kwargs)
+    return list(map(base.node_by_name, poly_plane))
+
+
+@decorators.restore_selection
+def create_poly_cube(name, **kwargs) -> list[base.DagNode]:
+    """
+    Creates a single polygon cube.
+
+    :param str name: name for the polygon cube.
+    :param kwargs: extra keyword arguments (similar to the ones accepted by cmds.polyCube command).
+    :return: newly created poly cube node instance.
+    :rtype: base.DagNode
+    """
+
+    poly_plane = cmds.polyCube(name=name, **kwargs)
+    return list(map(base.node_by_name, poly_plane))
+
+
+@decorators.restore_selection
+def create_poly_sphere(name, **kwargs) -> list[base.DagNode]:
+    """
+    Creates a single polygon sphere.
+
+    :param str name: name for the polygon sphere.
+    :param kwargs: extra keyword arguments (similar to the ones accepted by cmds.polySphere command).
+    :return: newly created poly sphere node instance.
+    :rtype: base.DagNode
+    """
+
+    poly_plane = cmds.polySphere(name=name, **kwargs)
+    return list(map(base.node_by_name, poly_plane))

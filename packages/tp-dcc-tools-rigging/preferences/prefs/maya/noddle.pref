@@ -1,0 +1,54 @@
+settings:
+    project:
+        previousProject: ''
+        recentProjects: []
+        maxRecent: 3
+    assets:
+        types:
+            - 'character'
+            - 'prop'
+            - 'vehicle'
+            - 'environment'
+            - 'other'
+    requiredMayaPlugins:
+        - 'matrixNodes'
+        - 'lookdevKit'
+        - 'quatNodes'
+    componentPaths: []
+    namingPresetPaths: []
+    defaultNamingPreset: "Noddle"
+    namingPresetHierarchy:
+        name: "Noddle"
+        children:
+            - name: "defaultUserPreset"
+              children: [ ]
+            - name: "UE5Preset"
+              children:
+                  - name: "UE5ClaviclePreset"
+                    children: [ ]
+                  - name: "UE5ThumbPreset"
+                    children: [ ]
+
+    builder:
+        titleFont: ['Roboto', 10]
+        socketFont: ['Roboto', 10]
+        history:
+            enabled: true
+            size: 32
+    naming:
+        templates:
+            default: '{side}_{name}_{suffix}'
+            alternative: '{name}_{side}_{suffix}'
+            unreal: '{suffix}_{name}_{side}'
+        profile:
+            indexPadding: 2
+            template: 'default'
+            startIndex: 0
+    rig:
+        io:
+            skin:
+                fileFormat: 'pickle'
+            nglayers:
+                fileFormat: 'pickle'
+        display:
+            lineWidth: 2.0

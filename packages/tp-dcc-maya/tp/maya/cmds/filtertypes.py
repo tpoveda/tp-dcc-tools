@@ -14,6 +14,107 @@ from tp.common.python import helpers
 
 logger = log.tpLogger
 
+GEO_SUFFIX = 'geo'
+JOINT_SUFFIX = 'jnt'
+CONTROLLER_SUFFIX = 'ctrl'
+CONSTRAINT_SUFFIX = 'cnstr'
+GROUP_SUFFIX = 'grp'
+SRT_SUFFIX = 'srt'
+LEFT_SUFFIX = 'L'
+LEFT2_SUFFIX = 'lft'
+RIGHT_SUFFIX = 'R'
+RIGHT2_SUFFIX = 'rgt'
+CENTER_SUFFIX = 'M'
+CENTER2_SUFFIX = 'cntr'
+CENTER3_SUFFIX = 'mid'
+LOW_SUFFIX = 'low'
+HIGH_SUFFIX = 'high'
+LORES_SUFFIX = 'lores'
+HIRES_SUFFIX = 'hires'
+CURVE_SUFFIX = 'crv'
+CLUSTER_SUFFIX = 'cstr'
+FOLLICLE_SUFFIX = 'foli'
+NURBS_SUFFIX = 'geo'
+IMAGE_PLANE_SUFFIX = 'imgp'
+LOCATOR_SUFFIX = 'loc'
+LIGHT_SUFFIX = 'lgt'
+SHADER_SUFFIX = 'shdr'
+SHADING_GROUP_SUFFIX = 'shdg'
+CAMERA_SUFFIX = 'cam'
+
+SUFFIX_LIST = [
+    'Select...',
+    f'Mesh: "{GEO_SUFFIX}"',
+    f'Joint: "{JOINT_SUFFIX}"',
+    f'Control: "{CONTROLLER_SUFFIX}"',
+    f'Constraint: "{CONSTRAINT_SUFFIX}"',
+    f'Group: "{GROUP_SUFFIX}"',
+    f'Rot Trans Scl: "{SRT_SUFFIX}"',
+    f'Left: "{LEFT_SUFFIX}"',
+    f'Left: "{LEFT2_SUFFIX}"',
+    f'Right: "{RIGHT_SUFFIX}"',
+    f'Right: "{RIGHT2_SUFFIX}"',
+    f'Center: "{CENTER_SUFFIX}"',
+    f'Center: "{CENTER2_SUFFIX}"',
+    f'Center: "{CENTER3_SUFFIX}"',
+    f'Low: "{LOW_SUFFIX}"',
+    f'High: "{HIGH_SUFFIX}"',
+    f'Lores: "{LORES_SUFFIX}"',
+    f'Hires: "{HIRES_SUFFIX}"',
+    f'Camera: "{CAMERA_SUFFIX}"',
+    f'Curve: "{CURVE_SUFFIX}"',
+    f'Cluster: "{CLUSTER_SUFFIX}"',
+    f'Follicle: "{FOLLICLE_SUFFIX}"',
+    f'Nurbs: "{NURBS_SUFFIX}"',
+    f'Image Plane: "{IMAGE_PLANE_SUFFIX}"',
+    f'Locator: "{LOCATOR_SUFFIX}"',
+    f'Shader: "{SHADER_SUFFIX}"',
+    f'Light: "{LIGHT_SUFFIX}"',
+    f'Shading Group: "{SHADING_GROUP_SUFFIX}"',
+]
+
+AUTO_SUFFIX_DICT = {
+    'mesh': GEO_SUFFIX,
+    'joint': JOINT_SUFFIX,
+    'nurbsCurve': CURVE_SUFFIX,
+    'group': GROUP_SUFFIX,
+    'follicle': FOLLICLE_SUFFIX,
+    'nurbsSurface': GEO_SUFFIX,
+    'imagePlane': IMAGE_PLANE_SUFFIX,
+    'aiAreaLight': LIGHT_SUFFIX,
+    'rsPhysicalLight': LIGHT_SUFFIX,
+    'PxrRectLight': LIGHT_SUFFIX,
+    'PxrSphereLight': LIGHT_SUFFIX,
+    'PxrDiskLight': LIGHT_SUFFIX,
+    'PxrDistantLight': LIGHT_SUFFIX,
+    'PxrDomeLight': LIGHT_SUFFIX,
+    'VRayLightRectShape': LIGHT_SUFFIX,
+    'VRaySunShape': LIGHT_SUFFIX,
+    'VRayLightDomeShape': LIGHT_SUFFIX,
+    'locator': LOCATOR_SUFFIX,
+    'light': LIGHT_SUFFIX,
+    'lambert': SHADER_SUFFIX,
+    'blinn': SHADER_SUFFIX,
+    'phong': SHADER_SUFFIX,
+    'rampShader': SHADER_SUFFIX,
+    'phongE': SHADER_SUFFIX,
+    'surfaceShader': SHADER_SUFFIX,
+    'useBackground': SHADER_SUFFIX,
+    'shadingGroup': SHADING_GROUP_SUFFIX,
+    'aiStandardSurface': SHADER_SUFFIX,
+    'RedshiftMaterial': SHADER_SUFFIX,
+    'VRayMtl': SHADER_SUFFIX,
+    'PxrSurface': SHADER_SUFFIX,
+    'controller': CONTROLLER_SUFFIX,
+    'camera': CAMERA_SUFFIX,
+    'clusterHandle': CLUSTER_SUFFIX,
+    'parentConstraint': CONSTRAINT_SUFFIX,
+    'pointConstraint': CONSTRAINT_SUFFIX,
+    'orientConstraint': CONSTRAINT_SUFFIX,
+    'aimConstraint': CONSTRAINT_SUFFIX,
+    'matrixConstraint': CONSTRAINT_SUFFIX
+}
+
 ALL_FILTER_TYPE = 'All Node Types'
 GROUP_FILTER_TYPE = 'Group'
 GEOMETRY_FILTER_TYPE = 'Geometry'

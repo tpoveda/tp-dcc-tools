@@ -8,7 +8,6 @@ from tp.core import dcc, tool
 class RenamerTool(tool.Tool):
 
 	id = 'tp.utility.renamer'
-	creator = 'Tomi Poveda'
 	tags = ['name', 'rename']
 
 	@override

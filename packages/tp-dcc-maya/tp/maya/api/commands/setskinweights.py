@@ -10,7 +10,7 @@ import maya.api.OpenMaya
 from tp.core import command
 
 
-class SetSkinWeights(command.DccCommand, object):
+class SetSkinWeights(command.DccCommand):
     """
     Creates a new curve from the library of shapes
     """

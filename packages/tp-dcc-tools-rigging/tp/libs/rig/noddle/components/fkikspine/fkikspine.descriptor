@@ -1,0 +1,52 @@
+name: spine
+version: 1
+descriptorVersion: 1
+type: fkikspine
+side: M
+region: ''
+description: 'Spine with FK/IK behaviour'
+skeletonLayer:
+  settings:
+    - name: 'startJoint'
+      type: 13
+      value: ''
+    - name: 'endJoint'
+      type: 13
+      value: ''
+inputLayer:
+  dag:
+    - id: world
+      name: world
+      root: false
+      noddleType: input
+    - id: parent
+      name: parent
+      root: true
+      noddleType: input
+rigLayer:
+  settings:
+    controlPanel:
+      - channelBox: true
+        default: false
+        isDynamic: true
+        keyable: false
+        locked: false
+        name: showCurveTemplate
+        type: 0
+        value: true
+      - channelBox: true
+        default: 0.5
+        isDynamic: true
+        keyable: true
+        locked: false
+        name: followHips
+        type: 5
+        value: 0.5
+      - channelBox: true
+        default: 0.5
+        isDynamic: true
+        keyable: true
+        locked: false
+        name: followChest
+        type: 5
+        value: 0.5

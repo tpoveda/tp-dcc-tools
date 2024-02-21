@@ -65,7 +65,7 @@ class Matrix(Sequence):
 
 
 @dataclasses.dataclass
-class Shape(dataclass.AbstractDataClass):
+class Shape(dataclass.ADataClass):
     """
     Overloads of AbstractDataClass that interfaces with matrix shape data.
     """

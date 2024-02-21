@@ -3,7 +3,7 @@ version: '1.0.0'
 required: True
 author: 'Tomas Poveda'
 authorEmail: 'tpovedatd@gmail.com'
-description: 'Modeling tools package for tp-dcc-tools framework'
+description: 'Modeling tools package for tp-dcc framework'
 displayName: 'tp-dcc-tools Modeling Tools'
 environment:
   PYTHONPATH:

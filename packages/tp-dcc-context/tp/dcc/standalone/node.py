@@ -1,9 +1,10 @@
 from tp.dcc.abstract import node
 
 
-class StandaloneNode(node.AbstractNode):
+class FnNode(node.AFnNode):
     """
-    Overload of skin.AbstractNode used to interface with nodes for standalone applications.
+    Overload of AFnNode used to interface with nodes for standalone applications.
     """
 
     pass
+

@@ -1,0 +1,36 @@
+name: world
+version: 1
+descriptorVersion: 1
+type: world
+side: M
+region: ''
+description: 'World component for all Noddle rigs.'
+inputLayer:
+  dag:
+    - id: root
+      name: root
+      critType: input
+      root: true
+      parent: null
+      translate: [0.0, 0.0, 0.0]
+      rotate: [0.0, 0.0, 0.0, 1.0]
+      rotateOrder: 2
+      children: []
+outputLayer:
+  dag:
+    - id: root
+      name: root
+      critType: output
+      parent: null
+      translate: [0.0, 0.0, 0.0]
+      rotate: [0.0, 0.0, 0.0, 1.0]
+      rotateOrder: 2
+      children: []
+skeletonLayer:
+  settings:
+    - name: 'startJoint'
+      type: 13
+      value: ''
+    - name: 'endJoint'
+      type: 13
+      value: ''

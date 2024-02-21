@@ -25,7 +25,10 @@ class FileExtensions(enum.IntEnum):
     ma = 1
 
 
-class MayaScene(scene.AbstractScene):
+class FnScene(scene.AFnScene):
+    """
+    Overloads of AFnScene function set class to handle behaviour for Maya scenes.
+    """
 
     __slots__ = ()
     __extensions__ = FileExtensions
@@ -40,6 +43,7 @@ class MayaScene(scene.AbstractScene):
 
         return FileExtensions.mb, FileExtensions.ma
 
+    @override
     def is_batch_mode(self) -> bool:
         """
         Returns whether scene is running in batch mode.
@@ -168,7 +172,7 @@ class MayaScene(scene.AbstractScene):
         :rtype: list[OpenMaya.MObject]
         """
 
-        selection = OpenMaya.MGlobal.getActiveSelectionList()       # type: OpenMaya.MSelectionList
+        selection: OpenMaya.MSelectionList = OpenMaya.MGlobal.getActiveSelectionList()
         return [selection.getDependNode(i) for i in range(selection.length())]
 
     @override(check_signature=False)

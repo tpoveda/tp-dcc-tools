@@ -30,8 +30,8 @@ class Plugin:
     Base plugin class.
     """
 
-    ID = ''
-    DCCS = list()
+    ID: str = ''
+    DCCS: list[str] = []
 
     def __init__(self, factory=None):
         self._factory = factory
@@ -50,7 +50,7 @@ class PluginStats:
         self._end_time = 0.0
         self._execution_time = 0.0
 
-        self._info = dict()
+        self._info = {}
         self._init()
 
     @property

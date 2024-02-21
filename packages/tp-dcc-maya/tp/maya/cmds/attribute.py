@@ -5,6 +5,8 @@
 Module that contains functions and classes related with attributes
 """
 
+from __future__ import annotations
+
 import os
 import re
 import sys
@@ -1061,27 +1063,57 @@ def disconnect_scale(transform_node):
     disconnect_attribute('{}.scaleZ'.format(transform_node))
 
 
-def delete_attribute(obj, attr):
+def unlock_disconnect_attributes(node_name: str, attr_names: list[str]):
     """
-    Deletes an attribute if it exists event if its locked
-    :param obj: str
-    :param attr: str
-    :return: bool
+    Unlocks and disconnects keys in all given attributes of the given node.
+
+    :param str node_name: name of the node.
+    :param list[str] attr_names: list of attributes to unlock and disconnect.
     """
 
-    combined = '{0}.{1}'.format(obj, attr)
-    if cmds.objExists(combined) and not cmds.attributeQuery(attr, node=obj, listParent=True):
-        try:
-            cmds.setAttr(combined, lock=False)
-        except Exception:
-            pass
+    for attr_name in attr_names:
+        combined_attr = f'{node_name}.{attr_name}'
+        cmds.setAttr(combined_attr, lock=False)
+        remove_keys_from_attribute(node_name, attr_name)
+        disconnect_attribute(combined_attr)
 
-        try:
-            break_connection(combined)
-        except Exception:
-            pass
 
-        cmds.deleteAttr(combined)
+def remove_keys_from_attribute(node_name: str, attr_name: str, time_range: tuple[int, int] = (-10000, 10000)):
+    """
+    Deletes all the keys on the given attribute within the given range.
+
+    :param str node_name: name of the node to remove key attributes from.
+    :param str attr_name: name of the attribute.
+    :param tuple[int, int] time_range: time range we want to delete keys from.
+    """
+
+    if cmds.keyframe(node_name, attribute=attr_name, selected=False, query=True):
+        cmds.cutKey(node_name, time=time_range, attribute=attr_name)
+
+
+def safe_delete_attribute(node_name: str, attr_name: str) -> bool:
+    """
+    Checks whether attributes exists and if it does, removes the attribute.
+
+    :param str node_name: name of the node whose attribute we want to delete.
+    :param str attr_name: name of the attribute to delete.
+    """
+
+    if not cmds.attributeQuery(attr_name, node=node_name, exists=True):
+        return False
+
+    parent_attrs = cmds.attributeQuery(attr_name, node=node_name, listParent=True)
+    if parent_attrs:
+        attr_name = parent_attrs[0]
+        child_attrs = cmds.attributeQuery(attr_name, node=node_name, listChildren=True)
+        if child_attrs:
+            unlock_disconnect_attributes(node_name, child_attrs)
+    else:
+        unlock_disconnect_attributes(node, [attr_name])
+
+    cmds.deleteAttr(f'{node_name}.{attr_name}')
+
+    return True
 
 
 def set_non_keyable(node_name, attributes):
@@ -1246,7 +1278,7 @@ def store_object_to_message(obj, storage_obj, message_name):
                         break_connection(cnt)
 
                 logger.debug('"{}" already exists. Not a message attribute, converting it!'.format(combined))
-                delete_attribute(storage_obj, message_name)
+                safe_delete_attribute(storage_obj, message_name)
 
                 buffer = cmds.addAttr(storage_obj, ln=message_name, at='message')
                 connect_attribute('{}.message'.format(obj), '{0}.{1}'.format(storage_obj, message_name))
@@ -1283,7 +1315,7 @@ def store_objects_to_message(objects, storage_obj, message_name):
     try:
         if cmds.objExists(combined):
             logger.debug(combined + ' already exists. Adding to existing message node')
-            delete_attribute(storage_obj, message_name)
+            safe_delete_attribute(storage_obj, message_name)
             cmds.addAttr(storage_obj, ln=message_name, at='message', m=True, im=False)
             for obj in objects:
                 cmds.connectAttr(
@@ -3723,7 +3755,7 @@ class Attribute(object):
         self.locked = False
         self._set_lock()
 
-        delete_attribute(obj=self.node, attr=self.name)
+        safe_delete_attribute(node_name=self.node, attr_name=self.name)
 
     def connect_in(self, attr):
         """

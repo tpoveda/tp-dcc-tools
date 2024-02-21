@@ -1,0 +1,41 @@
+{
+  "name": "finger",
+  "description": "",
+  "rules": [
+    {
+      "name": "skinJointName",
+      "creator": "Tomi Poveda",
+      "description": "Deformation joint chain name.",
+      "expression": "{componentName}_{id}_{side}",
+      "exampleFields": {
+        "componentName": "arm",
+        "side": "L",
+        "id": "upr",
+        "type": "joint"
+      }
+    }
+  ],
+  "tokens": [
+    {
+      "name": "id",
+      "description": "",
+      "permissions": [],
+      "table": {
+        "fk03": "03",
+        "bind00": "01",
+        "bind02": "03",
+        "fk02": "02",
+        "bind01": "02",
+        "bind03": "04",
+        "fk04": "04",
+        "bind04": "05",
+        "bind05": "06",
+        "fk01": "01",
+        "bind06": "07",
+        "fk06": "06",
+        "fk05": "05",
+        "fk00": "metacarpal"
+      }
+    }
+  ]
+}

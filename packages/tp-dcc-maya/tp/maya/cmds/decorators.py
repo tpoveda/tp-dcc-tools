@@ -247,12 +247,12 @@ def disable_auto_key(fn):
 def restore_selection(fn):
     @wraps(fn)
     def wrapped(*args, **kwargs):
-        selection = cmds.ls(selection=True) or list()
+        selection = cmds.ls(selection=True, long=True) or []
         try:
             return fn(*args, **kwargs)
         finally:
             if selection:
-                cmds.select(selection)
+                cmds.select([i for i in selection if cmds.objExists(i)])
     return wrapped
 
 

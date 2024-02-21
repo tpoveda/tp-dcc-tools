@@ -11,7 +11,7 @@ class FileExtensions(enum.IntEnum):
     max = 0
 
 
-class MaxScene(scene.Scene):
+class FnScene(scene.AFnScene):
 
     __slots__ = ()
     __extensions__ = FileExtensions

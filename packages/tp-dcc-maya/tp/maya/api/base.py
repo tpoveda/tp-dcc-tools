@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import contextlib
 from functools import wraps
-from typing import Tuple, List, Iterator, Iterable, Dict, Callable
+from typing import Iterator, Iterable, Any
 
 import maya.cmds as cmds
 import maya.api.OpenMaya as OpenMaya
@@ -23,11 +23,11 @@ LOCAL_TRANSFORM_ATTRS = LOCAL_TRANSLATE_ATTRS + LOCAL_ROTATE_ATTRS + LOCAL_SCALE
 logger = log.tpLogger
 
 
-def lock_node_context(fn: Callable):
+def lock_node_context(fn: callable):
     """
     Decorator function to lock and unlock the node.
 
-    :param Callable fn: decorated function.
+    :param callable fn: decorated function.
     """
 
     @wraps(fn)
@@ -46,11 +46,11 @@ def lock_node_context(fn: Callable):
     return locker
 
 
-def lock_node_plug_context(fn: Callable):
+def lock_node_plug_context(fn: callable):
     """
     Decorator function to lock and unlock a node plug.
 
-    :param Callable fn: decorated function.
+    :param callable fn: decorated function.
     """
 
     @wraps(fn)
@@ -78,16 +78,16 @@ def lock_node_plug_context(fn: Callable):
 
 
 @contextlib.contextmanager
-def lock_state_attr_context(node: DGNode, attr_names: List[str], state: bool):
+def lock_state_attr_context(node: DGNode, attr_names: list[str], state: bool):
     """
     Context manager which handles the lock state for a list of attribute on the given node.
 
     :param DGNode node: node to lock/unlock attributes of.
-    :param List[str] attr_names: list of attribute names.
+    :param list[str] attr_names: list of attribute names.
     :param bool state: lock state to set while executing the context scope.
     """
 
-    attributes = list()
+    attributes = []
     try:
         for attr_name in attr_names:
             attr = node.attribute(attr_name)
@@ -356,6 +356,13 @@ class DGNode:
         """
 
         return self.fullPathName()
+
+    def __bool__(self):
+        """
+         Overrides __bool__ function to return the False if the object does not exists.
+         """
+
+        return self.exists()
 
     def __getitem__(self, item):
         """
@@ -967,7 +974,7 @@ class DGNode:
             current_obj, nodes.add_proxy_attribute(current_obj, source_plug.plug(), **plug_data).object()))
 
     @lock_node_context
-    def createAttributesFromDict(self, data: Dict, mod: OpenMaya.MDGModifier | None = None) -> List[Plug]:
+    def createAttributesFromDict(self, data: dict, mod: OpenMaya.MDGModifier | None = None) -> list[Plug]:
         """
         Creates an attribute on the node based on the attribute data in the following form:
         {
@@ -985,10 +992,10 @@ class DGNode:
             "value": 3
         }
 
-        :param Dict data: serialized attribute data.
+        :param dict data: serialized attribute data.
         :param OpenMaya.MDGModifier or None mod: optional modifier to add.
         :return: list of created plugs.
-        :rtype: List[Plug].
+        :rtype: list[Plug].
         """
 
         created_plugs = []
@@ -1061,36 +1068,36 @@ class DGNode:
 
         return False
 
-    def iterateConnections(self, source: bool = True, destination: bool = True) -> Iterator[Tuple[Plug, Plug], ...]:
+    def iterateConnections(self, source: bool = True, destination: bool = True) -> Iterator[tuple[Plug, Plug], ...]:
         """
         Generator function that iterates over node connections.
 
         :param bool source: whether to iterate source connections.
         :param bool destination: whether to iterate destination connections.
         :return: generator with the first element is the plug instance and the second the connected plug.
-        :rtype: Iterator[Tuple[Plug, Plug], ...]
+        :rtype: Iterator[tuple[Plug, Plug], ...]
         """
 
         for source_plug, destination_plug in nodes.iterate_connections(self.object(), source, destination):
             yield Plug(self, source_plug), Plug(node_by_object(destination_plug.node()), destination_plug)
 
-    def sources(self) -> Iterator[Tuple[Plug, Plug], ...]:
+    def sources(self) -> Iterator[tuple[Plug, Plug], ...]:
         """
         Generator function that iterates over source plugs.
 
         :return: generator with the first element is the plug instance and the second the connected plug.
-        :rtype: Iterator[Tuple[Plug, Plug], ...]
+        :rtype: Iterator[tuple[Plug, Plug], ...]
         """
 
         for source, destination in nodes.iterate_connections(self.object(), source=True, destination=False):
             yield Plug(self, source), Plug(self, destination)
 
-    def destinations(self) -> Iterator[Tuple[Plug, Plug], ...]:
+    def destinations(self) -> Iterator[tuple[Plug, Plug], ...]:
         """
         Generator function that iterates over destination plugs.
 
         :return: generator with the first element is the plug instance and the second the connected plug.
-        :rtype: Iterator[Tuple[Plug, Plug], ...]
+        :rtype: Iterator[tuple[Plug, Plug], ...]
         """
 
         for source, destination in nodes.iterate_connections(self.object(), source=False, destination=True):
@@ -1334,12 +1341,12 @@ class DagNode(DGNode):
             dag_path.extendToShape(i)
             yield node_by_object(dag_path.node())
 
-    def shapes(self) -> List[DagNode]:
+    def shapes(self) -> list[DagNode]:
         """
         Returns a list of all shape nodes under this dag node instance.
 
         :return: list of shape nodes.
-        :rtype: List[DagNode]
+        :rtype: list[DagNode]
         """
 
         return list(self.iterateShapes())
@@ -1478,11 +1485,11 @@ class DagNode(DGNode):
                 for child in node_by_object(child).iterateChildren(recursive, node_types):
                     yield child
 
-    def children(self, node_types: tuple[OpenMaya.MFn] = ()) -> list[DagNode]:
+    def children(self, node_types: tuple[Any, ...] = ()) -> list[DagNode]:
         """
         Returns all immediate children objects.
 
-        :param tuple[OpenMaya.MFn] node_types: node types to get children of.
+        :param tuple[Any] node_types: node types to get children of.
         :return: found children.
         :rtype: list[DagNode]
         """
@@ -1566,7 +1573,8 @@ class DagNode(DGNode):
             if space == types.kWorldSpace and len(rotation) > 3:
                 rotation = OpenMaya.MQuaternion(rotation)
             else:
-                rotation = OpenMaya.MEulerRotation(rotation)
+                rotation = OpenMaya.MEulerRotation(
+                    [OpenMaya.MAngle(i, OpenMaya.MAngle.kDegrees).asRadians() for i in rotation])
         if space != types.kTransformSpace and isinstance(rotation, types.EulerRotation):
             space = types.kTransformSpace
 
@@ -2385,11 +2393,11 @@ class Plug:
         return plugs.set_plug_value(self._mplug, value, mod=mod, apply=apply)
 
     @lock_node_plug_context
-    def setFromDict(self, **data: Dict):
+    def setFromDict(self, **data: dict):
         """
         Set plug data from given dictionary.
 
-        :param Dict data: serialized plug data.
+        :param dict data: serialized plug data.
         """
 
         plugs.set_plug_info_from_dict(self._mplug, **data)
@@ -2465,7 +2473,7 @@ class Plug:
         source = self._mplug.source()
         return Plug(node_by_object(source.node()), source) if not source.isNull else None
 
-    def sourceNode(self) -> DGNode | None:
+    def sourceNode(self) -> DGNode | DagNode | None:
         """
         Returns the source node from this plug or None if it is not connected to any node.
 
@@ -2498,12 +2506,12 @@ class Plug:
         for destination_plug in self.destinations():
             yield destination_plug.node()
 
-    def serializeFromScene(self) -> Dict:
+    def serializeFromScene(self) -> dict:
         """
         Serializes current plug instance as a dictionary.
 
         :return: serialized plug data.
-        :rtype: Dict
+        :rtype: dict
         """
 
         return plugs.serialize_plug(self._mplug) if self.exists() else {}
@@ -2703,7 +2711,7 @@ class IkHandle(DagNode):
 class Joint(DagNode):
 
     @override(check_signature=False)
-    def create(self, **kwargs: Dict) -> Joint:
+    def create(self, **kwargs: dict) -> Joint:
 
         name = kwargs.get('name', 'joint')
         joint = nodes.factory.create_dag_node(name, 'joint')
@@ -2741,13 +2749,13 @@ class Joint(DagNode):
             parent.attribute('scale').connect(self.inverseScale)
 
     def aim_to_child(
-            self, aim_vector: OpenMaya.MVector | List[float, float, float],
-            up_vector: OpenMaya.MVector | List[float, float, float], use_joint_orient: bool = True):
+            self, aim_vector: OpenMaya.MVector | list[float, float, float],
+            up_vector: OpenMaya.MVector | list[float, float, float], use_joint_orient: bool = True):
         """
         Aims this joint to point to its first child in the hierarchy. If joint has no chain, rotation will be reset.
 
-        :param OpenMaya.MVector or List[float, float, float] aim_vector: vector to use as the aim vector.
-        :param OpenMaya.MVector or List[float, float, float] up_vector: vector to use as the up vector.
+        :param OpenMaya.MVector or list[float, float, float] aim_vector: vector to use as the aim vector.
+        :param OpenMaya.MVector or list[float, float, float] up_vector: vector to use as the up vector.
         :param bool use_joint_orient: whether to move rotation values to the joint orient after aiming.
         """
 
@@ -2913,17 +2921,17 @@ class ContainerAsset(DGNode):
                 continue
             cmds.container(container_path, edit=True, addNode=node_to_add.fullPathName(), includeHierarchyBelow=True)
 
-    def publishedAttributes(self) -> List[Plug]:
+    def publishedAttributes(self) -> list[Plug]:
         """
         Returns all published attributes in this contdainer.
 
         :return: list of published attributes.
-        :rtype: List(Plug)
+        :rtype: list(Plug)
         """
 
         results = cmds.container(self.fullPathName(), query=True, bindAttr=True)
         if not results:
-            return list()
+            return []
 
         # cmds returns a flat list of attribute name, published name, so we chunk as pai
         return [plug_by_name(attr) for attr, _ in helpers.chunk(results, 2)]
@@ -3078,13 +3086,13 @@ class ObjectSet(DGNode):
 
     @override(check_signature=False)
     def create(self, name: str, mod: OpenMaya.MDGModifier | None = None,
-               members: List[DGNode] | None = None) -> ObjectSet:
+               members: list[DGNode] | None = None) -> ObjectSet:
         """
         Creates the MFnSet and sets this instance MObject to the new node.
 
         :param str name: name for the object set node.
         :param OpenMaya.MDGModifier or None mod: modifier to add to, if None it will create one.
-        :param List[DGNode] or None members: list of nodes to add as members of this object set.
+        :param list[DGNode] or None members: list of nodes to add as members of this object set.
         :return: instance of the new object set.
         :rtype: ObjectSet
         """
@@ -3129,23 +3137,23 @@ class ObjectSet(DGNode):
 
         return True
 
-    def addMembers(self, new_members: List[DGNode]):
+    def addMembers(self, new_members: list[DGNode]):
         """
         Adds a list of new objects into the set.
 
-        :param List[DGNode] new_members: list of nodes to add as new members to this set.
+        :param list[DGNode] new_members: list of nodes to add as new members to this set.
         """
 
         for member in new_members:
             self.addMember(member)
 
-    def members(self, flatten: bool = False) -> List[DGNode]:
+    def members(self, flatten: bool = False) -> list[DGNode]:
         """
         Returns the members of this set as a list.
 
         :param bool flatten: whether all sets that exist inside this set will be expanded into a list of their contents.
         :return: a list of all members in the set.
-        :rtype: List[DGNode]
+        :rtype: list[DGNode]
         """
 
         return list(map(node_by_name, self._mfn.getMembers(flatten).getSelectionStrings()))
@@ -3160,11 +3168,11 @@ class ObjectSet(DGNode):
         if member.exists():
             self.removeMembers([member])
 
-    def removeMembers(self, members: List[DGNode]):
+    def removeMembers(self, members: list[DGNode]):
         """
         Removes items of the list from the set.
 
-        :param List[DGNode] members: member nodes to remove.
+        :param list[DGNode] members: member nodes to remove.
         """
 
         member_list = OpenMaya.MSelectionList()
@@ -3201,7 +3209,7 @@ class AnimLayer(DGNode):
         :rtype: list(AnimCurve)
         """
 
-        for anim_curve_name in cmds.animLayer(self.fullPathName(), query=True, animCurves=True) or list():
+        for anim_curve_name in cmds.animLayer(self.fullPathName(), query=True, animCurves=True) or []:
             anim_curve = AnimCurve(node=nodes.mobject(anim_curve_name))
             yield anim_curve
 

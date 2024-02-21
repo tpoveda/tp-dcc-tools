@@ -267,7 +267,7 @@ class DataType:
     def runtime_types(cls, names: bool = False, classes: bool = False) -> list[dict]:
         result = []
 
-        # TODO: A datatype should be define by itself whether is runtime or
+        # TODO: A datatype should be define by itself whether is runtime
         runtime_types = [cls.LIST['class']]
         if 'COMPONENT' in DATA_TYPES_REGISTER:
             runtime_types.append(DATA_TYPES_REGISTER['COMPONENT']['class'])

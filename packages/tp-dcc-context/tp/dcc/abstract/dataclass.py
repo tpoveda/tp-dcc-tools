@@ -9,12 +9,19 @@ from tp.common.python import decorators
 
 
 @dataclasses.dataclass
-class AbstractDataClass(Mapping, metaclass=abc.ABCMeta):
+class ADataClass(Mapping, metaclass=abc.ABCMeta):
     """
     Overload of 'Mapping' used to outline abstract data class behaviour.
     """
 
     def __getstate__(self) -> dict:
+        """
+        Overrides internal function that returns a pickled object from this collection.
+
+        :return: pickled object.
+        :rtype: dict
+        """
+
         state = {'__name__': self.class_name, '__module__': self.module_name}
         for key, value in self.items():
             if hasattr(value, '__getstate__'):
@@ -23,9 +30,23 @@ class AbstractDataClass(Mapping, metaclass=abc.ABCMeta):
         return state
 
     def __setstate__(self, state: dict):
+        """
+        Overrides internal function that inherits the contents of the pickled object.
+
+        :param dict state: pickled object.
+        """
+
         self.update(state)
 
-    def __getitem__(self, key: str or int):
+    def __getitem__(self, key: str | int) -> Any:
+        """
+        Overrides internal function that returns the indexed item.
+
+        :param str or int key: item key.
+        :return: indexed item.
+        :rtype: Any
+        """
+
         if isinstance(key, str):
             return getattr(self, key)
         elif isinstance(key, int):
@@ -38,7 +59,14 @@ class AbstractDataClass(Mapping, metaclass=abc.ABCMeta):
         else:
             raise TypeError(f'__getitem__() expects either a str or int ({type(key).__name__} given)!')
 
-    def __setitem__(self, key: str or int, value: Any):
+    def __setitem__(self, key: str | int, value: Any):
+        """
+        Internal function that updates an indexed item.
+
+        :param str or int key: index of the item to update.
+        :param Any value: new item value.
+        """
+
         if isinstance(key, str):
             return setattr(self, key, value)
         elif isinstance(key, int):
@@ -52,18 +80,56 @@ class AbstractDataClass(Mapping, metaclass=abc.ABCMeta):
             raise TypeError(f'__setitem__() expects either a str or int ({type(key).__name__} given)!')
 
     def __contains__(self, item: Any) -> bool:
+        """
+        Internal function that evaluation whether this instance contains the given item.
+
+        :param Any item: item to check existence of.
+        :return: True if item exists within this collection; False otherwise.
+        :rtype: bool
+        """
+
         return item in self.keys()
 
     def __eq__(self, other: Any) -> bool:
+        """
+        Internal function that implements equal operator.
+
+        :param Any other: item to check against.
+        :return: True if given item is equal to this collection; False otherwise.
+        :rtype: bool
+        """
+
         return self is other
 
     def __ne__(self, other: Any) -> bool:
+        """
+        Internal function that implements not equal operator.
+
+        :param Any other: item to check against.
+        :return: True if given item is not equal to this collection; False otherwise.
+        :rtype: bool
+        """
+
         return self is not other
 
     def __len__(self) -> int:
+        """
+        Internal function that returns the size of this collection instance.
+
+        :return: collection size.
+        :rtype: int
+        """
+
         return len(list(self.fields()))
 
     def __iter__(self) -> Iterator[str]:
+        """
+        Internal function that returns a generator that yields keys from this collection instance.
+
+        :return: iterated keys.
+        :rtype: Iterator[str]
+        """
+
         return self.keys()
 
     @decorators.classproperty
@@ -155,7 +221,7 @@ class AbstractDataClass(Mapping, metaclass=abc.ABCMeta):
         for key, value in obj.items():
             setattr(self, key, value)
 
-    def copy(self, **kwargs) -> AbstractDataClass:
+    def copy(self, **kwargs) -> ADataClass:
         """
         Returns a copy of this instance.
         Any keyword arguments supplied will be passed to the update method.

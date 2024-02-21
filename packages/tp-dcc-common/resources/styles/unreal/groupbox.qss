@@ -6,14 +6,15 @@
 
 QGroupBox
 {
-    background-color: @BLACK_EERIE_COLOR;
+    background-color: @BLACK_JET_COLOR;
     border-style: transparent;
-    padding-top: 10px;
+    padding-top: 18px;
+    border-radius: @ROUND_SIZEpx;
 }
 
 QGroupBox::title
 {
-    padding: 0px;
+    padding: 5px;
 }
 
 QGroupBox::indicator

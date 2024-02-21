@@ -3,7 +3,7 @@ version: '1.0.0'
 required: True
 author: 'Tomas Poveda'
 authorEmail: 'tpovedatd@gmail.com'
-description: 'DCC agnostic package for tpDcc Tools framework'
+description: 'DCC agnostic package for tp-dcc Tools framework'
 displayName: 'tpDcc Context'
 environment:
   PYTHONPATH:

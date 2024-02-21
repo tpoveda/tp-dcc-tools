@@ -92,7 +92,7 @@ def clean_path(path: str) -> str:
     """
 
     if not path:
-        return
+        return ''
 
     # We convert '~' Unix character to user's home directory
     path = os.path.expanduser(str(path))

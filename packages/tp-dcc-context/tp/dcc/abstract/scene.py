@@ -9,9 +9,9 @@ from tp.dcc.abstract import base
 from tp.common.python import decorators
 
 
-class AbstractScene(base.AbstractBase):
+class AFnScene(base.AFnBase):
     """
-    Custom class to outline behaviour for DCC scenes
+    Overloads of AFnBase function set class to handle behaviour for DCC scenes.
     """
 
     __slots__ = ()
@@ -47,7 +47,6 @@ class AbstractScene(base.AbstractBase):
         :rtype: bool
         """
 
-        extension = ''
         if os.path.isfile(path):
             filename = os.path.basename(path)
             _, extension = os.path.splitext(filename)

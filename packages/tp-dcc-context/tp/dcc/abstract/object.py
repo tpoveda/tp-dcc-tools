@@ -12,7 +12,7 @@ if typing.TYPE_CHECKING:
     from tp.dcc.abstract.node import AbstractNode
 
 
-class AbstractObject(base.AbstractBase):
+class AFnObject(base.AFnBase):
     """
     Custom context class that outlines parent/child interfaces.
     """

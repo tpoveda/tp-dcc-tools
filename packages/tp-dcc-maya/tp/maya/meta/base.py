@@ -219,6 +219,42 @@ def find_meta_node_from_node(
     return None
 
 
+def meta_node_by_name(name: str) -> MetaBase | None:
+    """
+    Returns meta node by given name.
+
+    :param str name: name of the meta node to look for.
+    :return: found meta node instance with given name.
+    :rtype: MetaBase or None
+    """
+
+    found_meta_node: MetaBase | None = None
+    for meta_node in iterate_scene_meta_nodes():
+        if str(meta_node.name()) == name:
+            found_meta_node = meta_node
+            break
+
+    return found_meta_node
+
+
+def meta_node_by_handle(handle: OpenMaya.MObjectHandle):
+    """
+    Returns meta node by given handle.
+
+    :param OpenMaya.MObjectHandle handle: the node handle to convert to meta node if possible.
+    :return: found meta node instance with given handle.
+    :rtype: MetaBase or None
+    """
+
+    if not handle.isValid() or not handle.isAlive():
+        return None
+
+    if not is_meta_node(base.node_by_object(handle.object())):
+        return None
+
+    return MetaBase(handle.object())
+
+
 def create_meta_node_from_node(node: base.DGNode) -> MetaBase:
     """
     Creates a new meta node instance wrapping the given node.
@@ -243,10 +279,7 @@ def create_meta_node_by_type(type_name: str, *args: tuple, **kwargs) -> MetaBase
     """
 
     class_type = MetaRegistry().get_type(type_name)
-    if not class_type:
-        return None
-
-    return class_type(*args, **kwargs)
+    return class_type(*args, **kwargs) if class_type is not None else None
 
 
 def is_connected_to_meta(node: base.DGNode, type_name: str | None = None) -> bool:

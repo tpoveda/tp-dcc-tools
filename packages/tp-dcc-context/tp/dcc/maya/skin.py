@@ -15,7 +15,7 @@ from tp.maya.om import dagpath, plugs, plugmutators, skin as skin_utils
 logger = log.tpLogger
 
 
-class MayaSkin(node.Node, skin.AbstractSkin):
+class MayaSkin(node.FnNode, skin.AbstractSkin):
     """
     Overload of skin.AbstractSkin used to interface with skinning in Maya.
     """

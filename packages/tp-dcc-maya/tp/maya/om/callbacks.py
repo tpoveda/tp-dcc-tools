@@ -5,6 +5,8 @@
 Module that contains functions related with OpenMaya callbacks
 """
 
+from __future__ import annotations
+
 import maya.api.OpenMaya as OpenMaya
 
 from tp.core import log
@@ -47,15 +49,15 @@ class MCallbackIdWrapper(object):
     Wrapper class to handle cleaning up of Maya callbacks from registered MMessage.
     """
 
-    def __init__(self, callbackId):
+    def __init__(self, callback_id):
         super(MCallbackIdWrapper, self).__init__()
-        self.callback_id = callbackId
+        self.callback_id = callback_id
 
     def __del__(self):
         OpenMaya.MMessage.removeCallback(self.callback_id)
 
     def __repr__(self):
-        return 'MCallbackIdWrapper(%r)' % self.callback_id
+        return f'MCallbackIdWrapper({self.callback_id})'
 
 
 class CallbackSelection:
@@ -83,11 +85,11 @@ class CallbackSelection:
         callback_instance.stop()
     """
 
-    def __init__(self, func, *args, **kwargs):
+    def __init__(self, func: callable, *args, **kwargs):
         super(CallbackSelection, self).__init__()
 
-        self.selection_change_callback = None
-        self.current_selection = list()
+        self.selection_change_callback: MCallbackIdWrapper | None = None
+        self.current_selection: list[OpenMaya.MObjectHandle] = []
         self.current_callback_state = False
         self.callable = func
         self.arguments = args
@@ -95,14 +97,10 @@ class CallbackSelection:
 
     def __del__(self):
         """
-        Overridden so we cleanup the callback automatically on instance being deleted
+        Overridden so we clean up the callback automatically on instance being deleted.
         """
 
         self.stop()
-
-    # =================================================================================================================
-    # BASE
-    # =================================================================================================================
 
     def start(self):
         """
@@ -131,14 +129,10 @@ class CallbackSelection:
             self.selection_change_callback = None
 
             self.current_callback_state = False
-            self.current_selection = list()
+            self.current_selection: list[OpenMaya.MObjectHandle] = []
         except Exception:
             logger.error('Unknown Error Occurred during deleting callback', exc_info=True)
             output.display_error('Selection Callback Failed To Be Removed')
-
-    # =================================================================================================================
-    # CALLBACKS
-    # =================================================================================================================
 
     def _on_maya_selection_changed(self, *args, **kwargs):
         """
@@ -148,7 +142,7 @@ class CallbackSelection:
         # make sure we store objects as MObjectHandles
         selection = scene.iterate_selected_nodes(OpenMaya.MFn.kTransform)
         self.current_selection = map(OpenMaya.MObjectHandle, selection)
-        keywords = {"selection": self.current_selection}
+        keywords = {'selection': self.current_selection}
         keywords.update(self.keywords_args)
 
         # call client function

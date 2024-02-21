@@ -43,7 +43,7 @@ class AccordionItem(QGroupBox):
         self._accordion_widget = accordion
         self._widget = widget
         self._icon = icon
-        self._rollout_style = AccordionStyle.ROUNDED
+        self._rollout_style = AccordionStyle.ROUNDED if not dcc.is_maya() else AccordionStyle.MAYA
         self._drag_drop_mode = AccordionDragDrop.NO_DRAG_DROP
         self._collapsed = False
         self._collapsible = True
@@ -175,8 +175,8 @@ class AccordionItem(QGroupBox):
 
         if self.rollout_style == AccordionStyle.ROUNDED:
             border_color = self.palette().color(QPalette.Light)
-            header_color = QColor(self._theme.MAIN_BACKGROUND_COLOR).lighter(90)
-            background_color = QColor(self._theme.MAIN_BACKGROUND_COLOR).lighter(135)
+            header_color = QColor(*self._theme_prefs.SECONDARY_BACKGROUND_COLOR).lighter(90)
+            background_color = QColor(*self._theme_prefs.SECONDARY_BACKGROUND_COLOR).lighter(90)
 
             painter.save()
             # pen = QPen(border_color)
@@ -250,12 +250,11 @@ class AccordionItem(QGroupBox):
                 text = '-'
 
             pen = QPen(self.palette().color(QPalette.Light))
-            pen = QPen(Qt.red)
             pen.setWidthF(0.6)
             painter.setPen(pen)
             painter.drawRect(a_rect)
-            # pen.setColor(self.palette().color(QPalette.Shadow))
-            # painter.setPen(pen)
+            pen.setColor(self.palette().color(QPalette.Shadow))
+            painter.setPen(pen)
             painter.drawRect(b_rect)
             painter.setRenderHint(painter.Antialiasing, False)
             painter.setBrush(self.palette().color(QPalette.Window).darker(120))

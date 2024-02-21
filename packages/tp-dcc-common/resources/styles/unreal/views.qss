@@ -9,6 +9,8 @@ QTreeView,
 QListView
 {
     background-color: @BLACK_DARK_COLOR;
+    outline: none;
+    border: 1px solid @BLACK_DARK_COLOR;
 }
 
 QTableView::item,

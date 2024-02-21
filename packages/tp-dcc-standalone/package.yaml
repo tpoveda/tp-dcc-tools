@@ -3,7 +3,7 @@ version: '1.0.0'
 required: True
 author: 'Tomas Poveda'
 authorEmail: 'tpovedatd@gmail.com'
-description: 'Standalone package for tpDcc Tools framework'
+description: 'Standalone package for tp-dcc Tools framework'
 displayName: 'tpDcc Standalone'
 environment:
   PYTHONPATH:

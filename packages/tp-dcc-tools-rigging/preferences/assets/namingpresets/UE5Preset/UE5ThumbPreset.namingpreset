@@ -1,0 +1,9 @@
+{
+  "name": "UE5ThumbPreset",
+  "configs": [
+    {
+      "name": "finger",
+      "type": "finger"
+    }
+  ]
+}

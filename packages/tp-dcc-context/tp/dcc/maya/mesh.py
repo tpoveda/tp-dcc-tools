@@ -12,7 +12,7 @@ from tp.dcc.dataclasses import vector
 from tp.maya.om import dagpath, transform
 
 
-class MayaMesh(node.Node, mesh.AbstractMesh):
+class MayaMesh(node.FnNode, mesh.AbstractMesh):
     """
     Overload of mesh.AbstractMesh used to interface with meshes in Maya.
     """

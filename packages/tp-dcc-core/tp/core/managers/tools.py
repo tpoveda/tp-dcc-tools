@@ -130,8 +130,8 @@ class ToolsManager:
             return None
 
         try:
-            result = plugin_instance.execute(*args, **kwargs)
-            # logger.info(f'{plugin_instance} Execution time: {plugin_instance.stats.execution_time}')
+            result = plugin_instance._execute(*args, **kwargs)
+            logger.info(f'{plugin_instance} Execution time: {plugin_instance.stats.info["executionTime"]}')
         except Exception:
             traceback.print_exc()
             raise
@@ -150,5 +150,5 @@ class ToolsManager:
         for pkg_name, tools in self._tools_factory.loaded_plugins.items():
             for tool_instance in tools:
                 logger.debug(f'Shutting down tool: {tool_instance.ID}')
-                tool_instance.teardown()
+                tool_instance._run_teardown()
         self._tools_factory.unload_all_plugins()

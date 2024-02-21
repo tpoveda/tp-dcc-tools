@@ -6,9 +6,9 @@ from typing import Generator, Sequence, Any
 from tp.dcc.abstract import object
 
 
-class AbstractLayer(object.AbstractObject):
+class AFnLayer(object.AFnObject):
     """
-    Overloads of AbstractBase context class to handle behaviour for DCC layers.
+    Overloads of AFnObject function set class to handle behaviour for DCC layers.
     """
 
     __slots__ = ()

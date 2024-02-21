@@ -14,13 +14,13 @@ from tp.maya.om import dagpath, attributes, plugs, plugmutators
 from tp.maya.cmds import namespace
 
 
-class MayaNode(node.AbstractNode):
+class FnNode(node.AFnNode):
     """
     Overload of node.AbstractNode that implements context behaviour for Maya scene nodes.
     """
 
     __slots__ = ()
-    __handles__ = {}                # type: dict[int, OpenMaya.MObjectHandle]
+    __handles__: dict[int, OpenMaya.MObjectHandle] = {}
     __sep_char__ = '|'
     __alt_sep_char__ = '|'
 
@@ -79,7 +79,7 @@ class MayaNode(node.AbstractNode):
 
     @override(check_signature=False)
     def parent(self) -> OpenMaya.MObject | None:
-        obj = self.object()
+        obj: OpenMaya.MObject | None = self.object()
         if not obj.hasFn(OpenMaya.MFn.kDagNode):
             return None
 
@@ -90,7 +90,7 @@ class MayaNode(node.AbstractNode):
 
     @override(check_signature=False)
     def set_parent(self, parent: OpenMaya.MObject | None):
-        obj = self.object()
+        obj: OpenMaya.MObject | None = self.object()
         if not obj.hasFn(OpenMaya.MFn.kDagNode):
             return
 
@@ -100,7 +100,7 @@ class MayaNode(node.AbstractNode):
 
     @override(check_signature=False)
     def iterate_children(self, api_type: int = OpenMaya.MFn.kTransform) -> Generator[OpenMaya.MObject, None, None]:
-        obj = self.object()
+        obj: OpenMaya.MObject | None = self.object()
         if not obj.hasFn(OpenMaya.MFn.kDagNode):
             return
 
@@ -150,7 +150,7 @@ class MayaNode(node.AbstractNode):
         if not self.is_valid():
             return False
 
-        obj = self.object()
+        obj: OpenMaya.MObject | None = self.object()
         if obj.hasFn(OpenMaya.MFn.kDagNode):
             return OpenMaya.MFnDagNode(obj).isIntermediateObject
 

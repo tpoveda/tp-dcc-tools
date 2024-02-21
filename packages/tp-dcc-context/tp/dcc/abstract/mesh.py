@@ -34,7 +34,7 @@ class Hit:
     bary_coords: tuple[float, float, float] = dataclasses.field(default_factory=lambda: (0.0, 0.0, 0.0))
 
 
-class AbstractMesh(base.AbstractBase):
+class AbstractMesh(base.AFnBase):
     """
     Overloads of base.AbstractBase that outlines DCC context behaviour for meshes.
     """
