@@ -5,7 +5,7 @@ from typing import Iterator
 
 if typing.TYPE_CHECKING:
     from tp.common.naming.manager import NameManager
-    from tp.libs.rig.crit.maya.core.rig import Rig
+    from tp.libs.rig.crit.core.rig import Rig
 
 
 def unique_name_for_rig(rigs: Iterator[Rig], name: str) -> str:

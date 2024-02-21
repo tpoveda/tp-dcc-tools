@@ -13,20 +13,20 @@ environment:
   TPDCC_TOOL_DEFINITION_MODULES:
     - '{self}/tp/tools/rig/crit/tool.py'
   TPDCC_META_PATHS:
-    - '{self}/tp/libs/rig/crit/maya/meta'
+    - '{self}/tp/libs/rig/crit/meta'
   TPDCC_COMMAND_LIB:
-    - '{self}/tp/libs/rig/crit/maya/library/commands'
+    - '{self}/tp/libs/rig/crit/commands'
   TPDCC_MARKING_MENU_PATHS:
-    - '{self}/tp/libs/rig/crit/maya/library/markingmenus/menus'
+    - '{self}/tp/libs/rig/crit/markingmenus/menus'
   TPDCC_MARKING_MENU_COMMAND_PATHS:
-    - '{self}/tp/libs/rig/crit/maya/library/markingmenus/commands'
-  CRIT_NAME_PRESET_PATH: "{self}/tp/libs/rig/crit/library/naming"
-  CRIT_BUILD_SCRIPTS_PATH: "{self}/tp/libs/rig/crit/library/buildscripts"
-  CRIT_EXPORT_PLUGIN_PATH: "{self}/tp/libs/rig/crit/library/exporters"
+    - '{self}/tp/libs/rig/crit/markingmenus/commands'
+  CRIT_NAME_PRESET_PATH: "{self}/tp/libs/rig/crit/naming"
+  CRIT_BUILD_SCRIPTS_PATH: "{self}/tp/libs/rig/crit/buildscripts"
+  CRIT_EXPORT_PLUGIN_PATH: "{self}/tp/libs/rig/crit/exporters"
   CRIT_COMPONENTS_PATHS:
-    - "{self}/tp/libs/rig/crit/maya/library/components"
+    - "{self}/tp/libs/rig/crit/components"
   CRIT_DESCRIPTORS_PATHS:
-    - "{self}/tp/libs/rig/crit/maya/library/components"
+    - "{self}/tp/libs/rig/crit/components"
   CRIT_COMPONENT_MODELS_PATHS:
     - "{self}/tp/tools/rig/crit/builder/models/components"
   CRIT_UI_EDITORS_PATHS:

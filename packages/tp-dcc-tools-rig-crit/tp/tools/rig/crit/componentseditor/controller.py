@@ -15,7 +15,7 @@ from tp.tools.rig.crit.componentseditor.core import template
 
 if typing.TYPE_CHECKING:
 	from tp.common.naming.manager import NameManager
-	from tp.libs.rig.crit.maya.core.managers import ComponentsManager
+	from tp.libs.rig.crit.core.managers import ComponentsManager
 	from tp.tools.rig.crit.builder.models.component import ComponentModel
 
 logger = log.rigLogger

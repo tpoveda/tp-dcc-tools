@@ -7,10 +7,16 @@ Module that contains implementation for Noddle library Preference interface.
 
 from __future__ import annotations
 
+import os
 from collections import deque
 
 from tp.preferences import preference
-from tp.common.python import path, folder
+from tp.common.python import helpers, path, folder
+
+NAMING_PRESET_HIERARCHY = 'namingPresetHierarchy'
+NAMING_PRESET_SAVE_PATH = 'namingPresetSavePath'
+NAMING_PRESET_PATHS = 'namingPresetPaths'
+COMPONENTS_PATHS_KEY = 'componentsPaths'
 
 
 class NoddleInterface(preference.PreferenceInterface):
@@ -26,21 +32,36 @@ class NoddleInterface(preference.PreferenceInterface):
 		templates_path = self.default_user_templates_path()
 		folder.ensure_folder_exists(templates_path)
 
-	def default_user_templates_path(self) -> str:
-		"""
-		Returns the default CRIT templates path.
+		asset_pkg = self.repository_asset_path()
+		local_folder = path.join_path(self.manager.asset_path(), 'noddle')
+		folder.copy_directory_contents_safe(asset_pkg, local_folder, skip_exists=True, overwrite_modified=True)
 
-		:return: CRIT assets/crit/templates absolute path.
+	@staticmethod
+	def repository_asset_path() -> str:
+		"""
+		Returns the absolute path containing all Noddle related assets (templates, build scripts, etc).
+
+		:return: default assets absolute path.
 		:rtype: str
 		"""
 
-		return path.join_path(self.manager.asset_path(), 'crit', 'templates')
+		return os.path.abspath(os.path.join(os.path.dirname(__file__), '..', 'assets'))
+
+	def default_user_templates_path(self) -> str:
+		"""
+		Returns the default Noddle templates path.
+
+		:return: Noddle assets/noddle/templates absolute path.
+		:rtype: str
+		"""
+
+		return path.join_path(self.manager.asset_path(), 'noddle', 'templates')
 
 	def empty_scenes_path(self) -> str:
 		"""
 		Returns the absolute path where empty scene templates are located.
 
-		:return: CRIT assets/crit/templates/emptyScenes absolute path.
+		:return: Noddle assets/noddle/templates/emptyScenes absolute path.
 		:rtype: str
 		"""
 
@@ -133,6 +154,101 @@ class NoddleInterface(preference.PreferenceInterface):
 
 		return self.settings(root=root).get('settings', {}).get('assets', {}).get('types', [])
 
+	def default_naming_config_path(self) -> str:
+		"""
+		Returns the absolute path where default naming presets are located.
+
+		:return: default naming presets absolute path.
+		:rtype: str
+		"""
+
+		return path.join_path(self.manager.asset_path(), 'noddle', 'namingpresets')
+
+	def naming_preset_paths(self, root: str | None = None) -> list[str]:
+		"""
+		Returns the paths whether presets are located.
+
+		:return: list of naming preset paths.
+		:rtype: list[str]
+		"""
+
+		preset_paths = self.settings(root=root).get('settings', {}).get(NAMING_PRESET_PATHS, [])
+		return helpers.remove_dupes([self.default_naming_config_path()] + preset_paths)
+
+	def naming_preset_hierarchy(self, root: str | None = None) -> dict:
+		"""
+		Returns the naming preset hierarchies from Noddle preference file.
+
+		:return: dictionary with naming presets hierarchy.
+		:rtype: dict
+		"""
+
+		return self.settings(root=root).get('settings', {}).get(NAMING_PRESET_HIERARCHY, {})
+
+	def naming_preset_save_path(self, root: str | None = None) -> str:
+		"""
+		Returns path where new naming presets will be stored into.
+
+		:return: absolute presets save folder.
+		:rtype: str
+		"""
+
+		return self.settings(root=root).get('settings', {}).get(
+			NAMING_PRESET_PATHS, list()) or self.default_naming_config_path()
+
+	def set_naming_preset_paths(self, paths: list[str], save: bool = True):
+		"""
+		Sets the naming preset paths for Noddle preferences file.
+
+		:param list[str] paths: list of naming preset paths.
+		:param bool save: whether to save preferences file changes.
+		"""
+
+		settings = self.settings(root=None)
+		settings['settings'][NAMING_PRESET_PATHS] = paths
+		if save:
+			settings.save()
+
+	def set_naming_preset_hierarchy(self, hierarchy: dict, save: bool = True):
+		"""
+		Sets the naming preset hierarchies for Noddle preferences file.
+
+		:param dict hierarchy: preset hierarchy dictionary.
+		:param bool save: whether to save preferences file changes.
+		"""
+
+		settings = self.settings(root=None)
+		settings['settings'][NAMING_PRESET_HIERARCHY] = hierarchy
+		if save:
+			settings.save()
+
+	def set_naming_preset_save_path(self, save_path: str, save: bool = True):
+		"""
+		Sets the naming preset save path for Noddle preferences file.
+
+		:param str save_path: preset save path to set.
+		:param bool save: whether to save preferences file changes.
+		"""
+
+		default_naming_path = self.default_naming_config_path()
+		if path.clean_path(save_path) == default_naming_path:
+			return
+		settings = self.settings(root=None)
+		settings['settings'][NAMING_PRESET_SAVE_PATH] = save_path
+		if save:
+			settings.save()
+
+	def user_components_paths(self, root: str | None = None) -> list[str]:
+		"""
+		Returns the user component folder paths.
+
+		:param str root: root name to search. If None, then all roots will be searched until relativePath is found.
+		:return: list of folder paths.
+		:rtype: list[str]
+		"""
+
+		return self.settings(root=root).get('settings', {}).get(COMPONENTS_PATHS_KEY, [])
+
 	def builder_history_enabled(self, root: str | None = None) -> bool:
 		"""
 		Returns whether builder history is enabled.
@@ -168,10 +284,10 @@ class NoddleInterface(preference.PreferenceInterface):
 
 	def naming_templates(self, root: str | None = None) -> dict:
 		"""
-		Returns CRIT naming templates.
+		Returns Noddle naming templates.
 
 		:param str root: root name to search. If None, then all roots will be searched until relativePath is found.
-		:return: crit naming templates.
+		:return: Noddle naming templates.
 		:rtype: Dict
 		"""
 
@@ -179,10 +295,10 @@ class NoddleInterface(preference.PreferenceInterface):
 
 	def current_naming_template(self, root: str | None = None) -> str:
 		"""
-		Returns current CRIT naming template.
+		Returns current Noddle naming template.
 
 		:param str root: root name to search. If None, then all roots will be searched until relativePath is found.
-		:return: current CRIT naming template name.
+		:return: current Noddle naming template name.
 		:rtype: str
 		"""
 
@@ -191,7 +307,7 @@ class NoddleInterface(preference.PreferenceInterface):
 
 	def name_start_index(self, root: str | None = None) -> int:
 		"""
-		Returns the CRIT naming start index.
+		Returns the Noddle naming start index.
 
 		:param str root: root name to search. If None, then all roots will be searched until relativePath is found.
 		:return: name start index.
@@ -202,7 +318,7 @@ class NoddleInterface(preference.PreferenceInterface):
 
 	def name_index_padding(self, root: str | None = None) -> int:
 		"""
-		Returns the CRIT naming index padding.
+		Returns the Noddle naming index padding.
 
 		:param str root: root name to search. If None, then all roots will be searched until relativePath is found.
 		:return: name index padding.

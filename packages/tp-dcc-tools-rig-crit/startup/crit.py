@@ -14,7 +14,7 @@ from tp.preferences.interfaces import crit
 from tp.common.resources import api as resources
 
 if dcc.is_maya():
-	from tp.libs.rig.crit.maya import plugin as crit_plugin
+	from tp.libs.rig.crit import plugin as crit_plugin
 
 if typing.TYPE_CHECKING:
 	from tp.bootstrap.core.package import Package

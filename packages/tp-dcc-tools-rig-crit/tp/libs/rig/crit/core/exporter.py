@@ -6,7 +6,7 @@ from typing import Any
 from tp.common.python import decorators
 
 if typing.TYPE_CHECKING:
-    from tp.libs.rig.crit.maya.core.rig import Rig
+    from tp.libs.rig.crit.core.rig import Rig
 
 
 class ExporterPlugin:

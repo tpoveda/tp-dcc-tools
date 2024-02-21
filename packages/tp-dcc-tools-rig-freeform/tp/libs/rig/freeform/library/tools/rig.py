@@ -23,6 +23,7 @@ def freeze_xform_rig(character_node: FreeformCharacter):
 	"""
 
 	character_joints = character_node.upstream(meta_skeleton.FreeformJoints)
+
 	joints = character_joints.joints()
 	joint_names = [jnt.fullPathName() for jnt in joints]
 	root = skeleton.root_joint(helpers.first_in_list(joints))
@@ -45,4 +46,4 @@ def freeze_xform_rig(character_node: FreeformCharacter):
 	new_character_node = character.characterize_skeleton(
 		new_root, name='ZeroTemp', update_ui=False, freeze_skeleton=False)
 
-	character.delete_character(new_character_node)
+	new_character_node.delete()

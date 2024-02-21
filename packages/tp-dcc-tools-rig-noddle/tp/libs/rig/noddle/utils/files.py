@@ -27,7 +27,7 @@ def create_empty_scene(new_path: str) -> bool:
 	source_path = path.join_path(noddle_interface.empty_scenes_path(), f'EmptyScene_Maya{dcc.version_name()}.ma')
 	logger.debug(f'Copying file "{source_path}" to "{new_path}"')
 	if not path.is_file(source_path):
-		raise IOError
+		raise IOError(f'Maya empty scene path does not exist: "{source_path}"')
 	try:
 		shutil.copy2(source_path, new_path)
 	except Exception:

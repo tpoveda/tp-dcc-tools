@@ -13,6 +13,11 @@ environment:
   TPDCC_TOOL_DEFINITION_MODULES:
     - '{self}/tp/tools/rig/noddle/tool.py'
   TPDCC_META_PATHS:
-    - '{self}/tp/libs/rig/noddle/maya/meta'
+    - '{self}/tp/libs/rig/noddle/meta'
+  NODDLE_NAME_PRESET_PATH: "{self}/tp/libs/rig/noddle/naming"
+  NODDLE_COMPONENTS_PATHS:
+    - "{self}/tp/libs/rig/noddle/components"
+  NODDLE_DESCRIPTORS_PATHS:
+    - "{self}/tp/libs/rig/noddle/components"
 commands:
   - '{self}/startup/noddle.py'

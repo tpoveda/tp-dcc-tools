@@ -1,4 +1,9 @@
-class BaseBuildScript:
+from __future__ import annotations
+
+from tp.common import plugin
+
+
+class BaseBuildScript(plugin.PluginFactory):
 
 	ID = ''
 

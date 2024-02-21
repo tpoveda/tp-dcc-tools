@@ -8,8 +8,8 @@ from tp.tools.rig.crit.builder.managers import components
 from tp.tools.rig.crit.builder.views import componentstree, componentsoutliner
 
 if typing.TYPE_CHECKING:
-	from tp.libs.rig.crit.maya.core.managers import ComponentsManager
-	from tp.libs.rig.crit.maya.descriptors.component import ComponentDescriptor
+	from tp.libs.rig.crit.core.managers import ComponentsManager
+	from tp.libs.rig.crit.descriptors.component import ComponentDescriptor
 	from tp.tools.rig.crit.builder.interface import CritUiInterface
 	from tp.tools.rig.crit.builder.models.rig import RigModel
 	from tp.tools.rig.crit.builder.ui import CritBuilderWindow

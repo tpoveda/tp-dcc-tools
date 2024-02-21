@@ -1,0 +1,29 @@
+{
+  "name": "UE5Preset",
+  "configs": [
+    {
+      "name": "finger_9m3r4owo",
+      "type": "finger"
+    },
+    {
+      "name": "godnodecomponent_sr24p0no",
+      "type": "godnodecomponent"
+    },
+    {
+      "name": "armcomponent_gpj3carl",
+      "type": "armcomponent"
+    },
+    {
+      "name": "headcomponent_8usgaz4y",
+      "type": "headcomponent"
+    },
+    {
+      "name": "legcomponent_0go5ones",
+      "type": "legcomponent"
+    },
+    {
+      "name": "spineFk_37opx6mb",
+      "type": "spineFk"
+    }
+  ]
+}

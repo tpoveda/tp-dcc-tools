@@ -8,9 +8,9 @@ from tp.commands import crit
 from tp.tools.rig.crit.builder.core import command, utils
 
 if typing.TYPE_CHECKING:
-	from tp.libs.rig.crit.maya.core.rig import Rig
-	from tp.libs.rig.crit.maya.core.component import Component
-	from tp.libs.rig.crit.maya.descriptors.component import ComponentDescriptor
+	from tp.libs.rig.crit.core.rig import Rig
+	from tp.libs.rig.crit.core.component import Component
+	from tp.libs.rig.crit.descriptors.component import ComponentDescriptor
 
 
 class CreateRigUiCommand(command.CritUiCommand):

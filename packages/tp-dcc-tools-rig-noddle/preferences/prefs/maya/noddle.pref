@@ -10,6 +10,25 @@ settings:
             - 'vehicle'
             - 'environment'
             - 'other'
+    requiredMayaPlugins:
+        - 'matrixNodes'
+        - 'lookdevKit'
+        - 'quatNodes'
+    componentPaths: []
+    namingPresetPaths: []
+    defaultNamingPreset: "Noddle"
+    namingPresetHierarchy:
+        name: "Noddle"
+        children:
+            - name: "defaultUserPreset"
+              children: [ ]
+            - name: "UE5Preset"
+              children:
+                  - name: "UE5ClaviclePreset"
+                    children: [ ]
+                  - name: "UE5ThumbPreset"
+                    children: [ ]
+
     builder:
         titleFont: ['Roboto', 10]
         socketFont: ['Roboto', 10]

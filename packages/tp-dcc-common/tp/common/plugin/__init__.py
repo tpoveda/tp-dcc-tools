@@ -493,7 +493,7 @@ class PluginFactory:
 
         return versions[str(plugin_version)]
 
-    def get_loaded_plugin_from_id(self, plugin_id, package_name=None, plugin_version=None, dcc=None):
+    def get_loaded_plugin_from_id(self, plugin_id, package_name=None, plugin_version=None, dcc=None) -> Plugin | None:
         """
         Retrieves the plugin with given plugin identifier. If you require a specific version of a plugin (in a
         scenario where there are multiple plugins with the same identifier) this can also be specified.
@@ -516,9 +516,9 @@ class PluginFactory:
 
         if package_name:
             matching_plugins = [plugin for plugin in self._loaded_plugins.get(
-                package_name, list()) if self._get_identifier(plugin) == plugin_id]
+                package_name, []) if self._get_identifier(plugin) == plugin_id]
         else:
-            matching_plugins = list()
+            matching_plugins = []
             for plugins in list(self._loaded_plugins.values()):
                 for plugin in plugins:
                     if self._get_identifier(plugin) == plugin_id:

@@ -15,7 +15,7 @@ from tp.tools.rig.crit.builder.views import editor
 from tp.tools.rig.crit.builder.widgets import treewidget
 
 if typing.TYPE_CHECKING:
-	from tp.libs.rig.crit.maya.core.managers import ComponentsManager
+	from tp.libs.rig.crit.core.managers import ComponentsManager
 	from tp.tools.rig.crit.builder.managers.components import ComponentsModelManager
 	from tp.tools.rig.crit.builder.views.createview import CreateView
 

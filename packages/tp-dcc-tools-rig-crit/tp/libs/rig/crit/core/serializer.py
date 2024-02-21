@@ -28,7 +28,7 @@ CritDumper.add_representer(helpers.ObjectDict, CritDumper.represent_dict)
 CritDumper.add_representer(OrderedDict, lambda dumper, data: dumper.represent_mapping(
     'tag:yaml.org,2002:map', data.items()))
 if dcc.is_maya():
-    from tp.libs.rig.crit.maya.descriptors import attributes, component, nodes, layers, graphs, spaceswitch
+    from tp.libs.rig.crit.descriptors import attributes, component, nodes, layers, graphs, spaceswitch
     descriptor_classes = [
         component.ComponentDescriptor,
         attributes.AttributeDescriptor,

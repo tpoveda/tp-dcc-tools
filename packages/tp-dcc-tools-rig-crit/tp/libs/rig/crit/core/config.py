@@ -2,18 +2,19 @@ from __future__ import annotations
 
 import os
 import typing
-from typing import List, Dict, Type
 
 from tp.core import log
 from tp.common import plugin
 from tp.common.python import helpers, strings
 from tp.preferences.interfaces import crit
+from tp.maya.cmds import helpers as maya_helpers
 
 from tp.libs.rig.crit import consts
-from tp.libs.rig.crit.core import namingpresets, buildscript, templates, exporter
+from tp.libs.rig.crit.core import namingpresets, components, buildscript, templates, exporter
 
 if typing.TYPE_CHECKING:
-    from tp.libs.rig.crit.maya.core.rig import Rig
+    from tp.libs.rig.crit.core.rig import Rig
+    from tp.libs.rig.crit.descriptors.component import ComponentDescriptor
 
 logger = log.rigLogger
 
@@ -44,6 +45,19 @@ def initialize_template_manager(reload: bool = False):
         templates_manager = templates.TemplatesManager()
         templates_manager.discover_templates()
         Configuration.TEMPLATES_MANAGER = templates_manager
+
+
+def initialize_components_manager(reload: bool = False):
+    """
+    Initializes CRIT components manager.
+
+    :param bool reload: whether to force reload of components manager if it is already initialized
+    """
+
+    if reload or Configuration.COMPONENTS_MANAGER is None:
+        components_manager = components.ComponentsManager()
+        components_manager.refresh()
+        Configuration.COMPONENTS_MANAGER = components_manager
 
 
 def initialize_build_scripts_manager(preference_interface, reload: bool = False):
@@ -92,7 +106,8 @@ class Configuration:
     EXPORT_PLUGIN_VAR = 'CRIT_EXPORT_PLUGIN_PATH'
 
     NAMING_PRESET_MANAGER: namingpresets.PresetsManager | None = None
-    TEMPLATES_MANAGER: plugin.PluginFactory | None = None
+    COMPONENTS_MANAGER: components.ComponentsManager | None = None
+    TEMPLATES_MANAGER: templates.TemplatesManager | None = None
     BUILD_SCRIPTS_MANAGER: plugin.PluginFactory | None = None
     EXPORTER_MANAGER: plugin.PluginFactory | None = None
 
@@ -112,6 +127,10 @@ class Configuration:
         self._build_skeleton_marking_menu = False
         self._guide_scale = 1.0
         self._control_scale = 1.0
+        self._use_proxy_attributes = True
+        self._use_containers = False
+        self._blackbox = False
+        self._hide_control_shapes_in_outliner = True
         self._export_plugin_overrides = self._preferences_interface.exporter_plugin_overrides()
 
         self._initialize_managers()
@@ -165,6 +184,17 @@ class Configuration:
         return cls.NAMING_PRESET_MANAGER
 
     @classmethod
+    def components_manager(cls) -> components.ComponentsManager:
+        """
+        Returns the current component manager instance.
+
+        :return: components manager instance.
+        :rtype: components.ComponentsManager
+        """
+
+        return cls.COMPONENTS_MANAGER
+
+    @classmethod
     def templates_manager(cls) -> templates.TemplatesManager:
         """
         Returns the templates manager used by this configuration.
@@ -209,12 +239,12 @@ class Configuration:
         return self._current_naming_preset
 
     @property
-    def build_scripts(self) -> List[str]:
+    def build_scripts(self) -> list[buildscript.BaseBuildScript]:
         """
         Returns list of directories or Python file paths which can be run during build time.
 
         :return: list of build script absolute paths.
-        :rtype: List[str]
+        :rtype: list[buildscript.BaseBuildScript]
         """
 
         return self._build_scripts
@@ -325,29 +355,89 @@ class Configuration:
 
         return self._build_skeleton_marking_menu
 
-    def update_from_rig(self, rig: Rig) -> Dict:
+    @property
+    def use_containers(self) -> bool:
+        """
+        Returns whether component asset container should be created.
+
+        :return: True to create containers; False otherwise.
+        :rtype: bool
+        """
+
+        return self._use_containers
+
+    @use_containers.setter
+    def use_containers(self, flag: bool):
+        """
+        Sets whether component asset container should be created.
+
+        :param bool flag: True to enable asset container; False otherwise.
+        """
+
+        self._use_containers = flag
+
+    @property
+    def blackbox(self) -> bool:
+        """
+        Returns whether component asset container should be black boxed.
+
+        :return: True if component asset container should be black boxed; False otherwise.
+        :rtype: bool
+        """
+
+        return self._blackbox
+
+    def update_from_rig(self, rig: Rig) -> dict:
         """
         Updates this configuration from the given scene rig instance.
 
-        :param tp.libs.rig.maya.core.rig.Rig rig: rig instance to pull configuration data from.
+        :param Rig rig: rig instance to pull configuration data from.
         :return: updated configuration dictionary.
-        :rtype: Dict
+        :rtype: dict
         """
 
         cache = rig.cached_configuration()
         self.update_from_cache(cache)
         return cache
 
-    def update_from_cache(self, cache: Dict, rig: Rig | None = None):
+    def update_from_cache(self, cache: dict, rig: Rig | None = None):
         """
         Updates this configuration from the given configuration dictionary.
 
-        :param Dict cache: configuration dictionary to update this configuration from.
+        :param dict cache: configuration dictionary to update this configuration from.
         :param Rig or None rig: optional rig this configuration belongs to.
         """
 
         if rig is not None:
-            raise NotImplementedError
+            blackbox = cache.get('blackBox')
+            if blackbox is not None:
+                rig.blackBox = blackbox
+            guide_controls_visibility = cache.get('guideControlVisibility')
+            guide_pivot_visibility = cache.get('guidePivotVisibility')
+            if guide_controls_visibility is not None or guide_pivot_visibility is not None:
+                control_state = -1 if guide_controls_visibility is None else consts.GUIDE_CONTROL_STATE
+                guide_state = -1 if guide_pivot_visibility is None else consts.GUIDE_PIVOT_STATE
+                if control_state == consts.GUIDE_PIVOT_STATE and guide_state == consts.GUIDE_PIVOT_STATE:
+                    visibility_state = consts.GUIDE_PIVOT_CONTROL_STATE
+                elif control_state == consts.GUIDE_CONTROL_STATE:
+                    visibility_state = consts.GUIDE_CONTROL_STATE
+                else:
+                    visibility_state = consts.GUIDE_PIVOT_STATE
+                rig.set_guide_visibility(
+                    visibility_state,
+                    control_value=guide_controls_visibility,
+                    guide_value=guide_pivot_visibility,
+                    include_root=False)
+
+            shapes_hidden = cache.get('hideControlShapesInOutliner', None)
+            if shapes_hidden is not None:
+                for component in rig.iterate_components():
+                    rig_layer = component.rig_layer()
+                    if rig_layer is None:
+                        continue
+                    for control in rig_layer.iterate_controls():
+                        for shape in control.iterate_shapes():
+                            shape.attribute('hiddenInOutliner').set(shapes_hidden)
 
         try:
             preset_name = cache['namingPreset']
@@ -367,17 +457,17 @@ class Configuration:
                 except Exception:
                     logger.error(f'Something went wrong while updating configuration: {setting}', exc_info=True)
 
-    def serialize(self, rig: Rig) -> Dict:
+    def serialize(self, rig: Rig) -> dict:
         """
         Serializes current configuration data.
 
         :param Rig rig: rig this configuration belongs to.
         :return: serialized data.
-        :rtype: Dict
+        :rtype: dict
         """
 
         cache = self._config_cache
-        overrides = dict()
+        overrides = {}
         build_script_config = self.build_script_config(rig)
 
         for setting in ('useProxyAttributes',
@@ -400,12 +490,22 @@ class Configuration:
 
         for build_script in self._build_scripts:
             properties = build_script_config.get(build_script.ID, {})
-            overrides.setdefault('buildScripts', list()).append([build_script.ID, properties])
+            overrides.setdefault('buildScripts', []).append([build_script.ID, properties])
 
         if self._current_naming_preset.name != consts.DEFAULT_BUILTIN_PRESET_NAME:
             overrides[consts.NAMING_PRESET_DESCRIPTOR_KEY] = self._current_naming_preset.name
 
         return overrides
+
+    def container_type(self) -> str:
+        """
+        Returns the default container type to use ('asset', 'set' or None).
+
+        :return: container type.
+        :rtype: str
+        """
+
+        return self._config_cache.get('defaultContainerType', 'asset')
 
     def find_name_manager_for_type(self, crit_type: str, preset_name: str | None = None):
         """
@@ -436,6 +536,27 @@ class Configuration:
 
         self._current_naming_preset = preset
 
+    def components_paths(self):
+        """
+        Returns all current registered components paths.
+
+        :return: list of paths.
+        :rtype: list(str)
+        """
+
+        return self.COMPONENTS_MANAGER.components_paths()
+
+    def initialize_component_descriptor(self, component_type: str) -> ComponentDescriptor:
+        """
+        Initializes the component descriptor of given type.
+
+        :param str component_type: component type (which is the class name of the component to create).
+        :return: initialized component descriptor.
+        :rtype: ComponentDescriptor
+        """
+
+        return self.COMPONENTS_MANAGER.initialize_component_descriptor(component_type)
+
     def set_build_scripts(self, script_ids):
         """
         Sets the current build scripts that should be executed for the rigs using this configuration.
@@ -450,7 +571,7 @@ class Configuration:
             if build_script:
                 self._build_scripts.append(build_script)
 
-    def export_plugin_by_id(self, plugin_id: str) -> Type[exporter.ExporterPlugin] | None:
+    def export_plugin_by_id(self, plugin_id: str) -> type[exporter.ExporterPlugin] | None:
         """
         Retrieves the exporter plugin class from given ID.
 
@@ -468,9 +589,10 @@ class Configuration:
         :param bool force: whether to force the reloading of the managers.
         """
 
-        initialize_template_manager(reload=force)
+        initialize_components_manager(reload=force)
         initialize_naming_preset_manager(self._preferences_interface, reload=force)
         initialize_build_scripts_manager(self._preferences_interface, reload=force)
+        initialize_template_manager(reload=force)
         initialize_exporter_registry(self._preferences_interface, reload=force)
 
     def _initialize_environment(self):
@@ -489,3 +611,12 @@ class Configuration:
 
         self.set_build_scripts(self._config_cache.get('buildScripts', []))
         self.set_naming_preset_by_name(self._config_cache.get('defaultNamingPreset', consts.DEFAULT_PRESET_NAME))
+
+        for plugin_required in self._config_cache.get('requiredMayaPlugins', []):
+            maya_helpers.load_plugin(plugin_required)
+
+        self._use_proxy_attributes = self._config_cache.get('useProxyAttributes', self._use_proxy_attributes)
+        self._use_containers = self._config_cache.get('useContainers', self._use_containers)
+        self._blackbox = self._config_cache.get('blackBox', self._blackbox)
+        self._hide_control_shapes_in_outliner = self._config_cache.get(
+            'hideControlShapesInOutliner', self._hide_control_shapes_in_outliner)

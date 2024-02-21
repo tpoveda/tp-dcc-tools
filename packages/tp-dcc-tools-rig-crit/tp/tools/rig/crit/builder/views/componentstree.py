@@ -15,13 +15,13 @@ from tp.preferences.interfaces import core
 from tp.common.resources import api as resources
 
 from tp.libs.rig.crit import consts
-from tp.libs.rig.crit.maya.core.component import Component
-from tp.libs.rig.crit.maya.meta.nodes import Guide
+from tp.libs.rig.crit.core.component import Component
+from tp.libs.rig.crit.meta.nodes import Guide
 from tp.tools.rig.crit.builder.widgets import treewidget
 
 if typing.TYPE_CHECKING:
     from tp.common.python.helpers import ObjectDict
-    from tp.libs.rig.crit.maya.core.managers import ComponentsManager
+    from tp.libs.rig.crit.core.managers import ComponentsManager
     from tp.tools.rig.crit.builder.core.command import CritUiCommand
     from tp.tools.rig.crit.builder.controller import CritBuilderController
     from tp.tools.rig.crit.builder.managers.components import ComponentsModelManager

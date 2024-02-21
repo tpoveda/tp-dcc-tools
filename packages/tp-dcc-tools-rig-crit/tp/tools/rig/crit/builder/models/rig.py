@@ -7,8 +7,8 @@ from tp.commands import crit
 from tp.common.python import profiler
 
 if typing.TYPE_CHECKING:
-	from tp.libs.rig.crit.maya.core.rig import Rig
-	from tp.libs.rig.crit.maya.meta.rig import CritRig
+	from tp.libs.rig.crit.core.rig import Rig
+	from tp.libs.rig.crit.meta.rig import CritRig
 	from tp.tools.rig.crit.builder.models.component import ComponentModel
 
 

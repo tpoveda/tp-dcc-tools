@@ -1,31 +1,42 @@
 settings:
-    requiredMayaPlugins:
-      - 'matrixNodes'
-      - 'lookdevKit'
-      - 'quatNodes'
-    defaultContainerType: 'asset'
-    useProxyAttributes: true
-    useContainers: false
-    blackbox: true
-    selectionChildHighlighting: false
-    buildScripts: ['default']
-    buildScriptPaths: []
-    templatePaths: []
-    componentPaths: []
-    namingPresetPaths: []
-    templateSavePath: ''
-    containerOutlinerDisplayUnderParent: true
-    containerAttrsShowAtTop: true
-    includeDefaultAssets: true
-    defaultNamingPreset: "CRIT"
-    namingPresetHierarchy:
-        name: "CRIT"
-        children:
-          - name: "defaultUserPreset"
-            children: []
-          - name: "UE5Preset"
-            children:
-              - name: "UE5ClaviclePreset"
-                children: []
-              - name: "UE5ThumbPreset"
-                children: []
+  project:
+    previousProject: ''
+    recentProjects: []
+    maxRecent: 3
+  assets:
+    types:
+      - 'character'
+      - 'prop'
+      - 'vehicle'
+      - 'environment'
+      - 'other'
+  requiredMayaPlugins:
+    - 'matrixNodes'
+    - 'lookdevKit'
+    - 'quatNodes'
+  defaultContainerType: 'asset'
+  useProxyAttributes: true
+  useContainers: false
+  blackbox: true
+  selectionChildHighlighting: false
+  buildScripts: ['default']
+  buildScriptPaths: []
+  templatePaths: []
+  componentPaths: []
+  namingPresetPaths: []
+  templateSavePath: ''
+  containerOutlinerDisplayUnderParent: true
+  containerAttrsShowAtTop: true
+  includeDefaultAssets: true
+  defaultNamingPreset: "CRIT"
+  namingPresetHierarchy:
+      name: "CRIT"
+      children:
+        - name: "defaultUserPreset"
+          children: []
+        - name: "UE5Preset"
+          children:
+            - name: "UE5ClaviclePreset"
+              children: []
+            - name: "UE5ThumbPreset"
+              children: []

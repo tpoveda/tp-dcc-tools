@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import os
 import inspect
-from typing import Set, Tuple, List, Dict, Iterator, Iterable, Type
+from typing import Iterator, Iterable, Type
 
 from overrides import override
 
@@ -113,12 +113,12 @@ def meta_node_type(node: base.DGNode) -> Type | None:
     return MetaRegistry.get_type(meta_class_name)
 
 
-def find_scene_roots() -> List[MetaBase]:
+def find_scene_roots() -> list[MetaBase]:
     """
     Finds all meta nodes in the scene that are root meta nodes.
 
     :return: list of root meta nodes within current scene.
-    :rtype: List[MetaBase]
+    :rtype: list[MetaBase]
     """
 
     return [meta for meta in iterate_scene_meta_nodes() if not list(meta.get_meta_parents())]
@@ -141,20 +141,20 @@ def iterate_scene_meta_nodes() -> Iterator[MetaBase]:
         it.next()
 
 
-def find_meta_nodes_by_class_type(class_type: Type | str) -> List[MetaBase]:
+def find_meta_nodes_by_class_type(class_type: Type | str) -> list[MetaBase]:
     """
     Generator function that returns all meta nodes within current scene with given meta type.
 
     :param Type or str class_type: metaclass type.
     :return: generator of found meta nodes with given metaclass type.
-    :rtype: List[MetaBase]
+    :rtype: list[MetaBase]
     """
 
     class_type_name = str(class_type)
     if inspect.isclass(class_type):
         class_type_name = class_type.ID
 
-    found_meta_nodes = list()
+    found_meta_nodes = []
     for meta_node in iterate_scene_meta_nodes():
         meta_class_name = meta_node.attribute(MCLASS_ATTR_NAME).value()
         if meta_class_name != class_type_name:
@@ -232,13 +232,12 @@ def create_meta_node_from_node(node: base.DGNode) -> MetaBase:
     return meta_class_type(node=node.object(), init_defaults=False) if meta_class_type else None
 
 
-def create_meta_node_by_type(type_name: str, *args: Tuple, **kwargs: Dict) -> MetaBase | None:
+def create_meta_node_by_type(type_name: str, *args: tuple, **kwargs) -> MetaBase | None:
     """
     Creates a new meta node instance within current scene and returns the type class instance from the meta registry.
 
     :param str type_name: metaclass type to create.
-    :param Tuple args: args to pass to the class.__init__ function.
-    :param Dict kwargs: keywords to pass to teh class.__init__ function.
+    :param tuple args: args to pass to the class.__init__ function.
     :return: subclass instance of MetaBase for the type.
     :rtype: MetaBase or None
     """
@@ -268,13 +267,13 @@ def is_connected_to_meta(node: base.DGNode, type_name: str | None = None) -> boo
     return False
 
 
-def connected_meta_nodes(node: base.DGNode | OpenMaya.MObject) -> List[MetaBase]:
+def connected_meta_nodes(node: base.DGNode | OpenMaya.MObject) -> list[MetaBase]:
     """
     Returns all the down stream connected meta nodes.
 
     :param DGNode or OpenMaya.MObject node: scene node to search connected nodes of.
     :return: connected down stream meta nodes.
-    :rtype:
+    :rtype: list[MetaBase]
     """
 
     if is_meta_node(node):
@@ -345,11 +344,11 @@ class MetaRegistry(object):
             cls.types[registry_name] = class_obj
 
     @classmethod
-    def register_meta_classes(cls, paths: List[str]):
+    def register_meta_classes(cls, paths: list[str]):
         """
         Registers given paths within the meta registry.
 
-        :param List[str] paths: list of module or package paths.
+        :param list[str] paths: list of module or package paths.
         """
 
         for _path in paths:
@@ -842,11 +841,11 @@ class MetaBase(base.DGNode):
         return list(self.iterate_meta_children(depth_limit=depth_limit, check_type=check_type))
 
     def iterate_children(
-            self, filter_types: Set | None = None, include_meta: bool = False) -> Iterator[base.DGNode | base.DagNode]:
+            self, filter_types: set | None = None, include_meta: bool = False) -> Iterator[base.DGNode | base.DagNode]:
         """
         Generator function that iterates over all children nodes.
 
-        :param Set or None filter_types: optional lister of node filter types.
+        :param set or None filter_types: optional lister of node filter types.
         :param bool include_meta: whether to include children meta nodes.
         :return: iterated DG/Dag nodes.
         :rtype: Iterator[base.DGNode | base.DagNode]
@@ -860,26 +859,26 @@ class MetaBase(base.DGNode):
                     continue
                 yield dest_node
 
-    def find_children_by_class_type(self, class_type: str, depth_limit: int = 1) -> List[MetaBase]:
+    def find_children_by_class_type(self, class_type: str, depth_limit: int = 1) -> list[MetaBase]:
         """
         Finds all meta node children of the given type.
 
         :param str class_type: metaclass type name.
         :param int depth_limit: recursive depth limit.
         :return: iterable of meta node children instances found of given type.
-        :rtype: List[MetaBase]
+        :rtype: list[MetaBase]
         """
 
         return [child for child in self.iterate_meta_children(depth_limit) if child.metaclass_type() == class_type]
 
-    def find_children_by_class_types(self, class_types: Iterable[str], depth_limit: int = 1) -> List[MetaBase]:
+    def find_children_by_class_types(self, class_types: Iterable[str], depth_limit: int = 1) -> list[MetaBase]:
         """
         Finds all meta node children of the given types.
 
         :param List[str] class_types: metaclass type names.
         :param int depth_limit: recursive depth limit.
         :return: iterable of meta node children instances found of given type.
-        :rtype: List[MetaBase]
+        :rtype: list[MetaBase]
         """
 
         return [child for child in self.iterate_meta_children(depth_limit) if child.metaclass_type() in class_types]

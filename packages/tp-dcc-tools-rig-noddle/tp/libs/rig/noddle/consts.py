@@ -1,15 +1,254 @@
-from enum import Enum
+from __future__ import annotations
+
+import enum
+
+from tp.maya.api import spaceswitch
 
 
 MPARENT_ATTR_NAME = 'tpMetaParent'
 MCHILDREN_ATTR_NAME = 'tpMetaChildren'
+
+
+# ======================================================================================================================
+# MetaClasses Types
+# ======================================================================================================================
+
+RIG_TYPE = 'noddleRig'
+COMPONENT_TYPE = 'noddleComponent'
+ANIM_COMPONENT_TYPE = 'noddleAnimComponent'
+BASE_LAYER_TYPE = 'noddleLayer'
+COMPONENTS_LAYER_TYPE = 'noddleComponentsLayer'
+INPUT_LAYER_TYPE = 'noddleInputLayer'
+OUTPUT_LAYER_TYPE = 'noddleOutputLayer'
+REGIONS_LAYER_TYPE = 'noddleRegionsLayer'
+SKELETON_LAYER_TYPE = 'noddleSkeletonLayer'
+RIG_LAYER_TYPE = 'noddleRigLayer'
+XGROUP_LAYER_TYPE = 'noddleXGroupLayer'
+GEOMETRY_LAYER_TYPE = 'noddleGeometryLayer'
+LAYER_TYPES = (
+    COMPONENTS_LAYER_TYPE,
+    INPUT_LAYER_TYPE,
+    OUTPUT_LAYER_TYPE,
+    REGIONS_LAYER_TYPE,
+    SKELETON_LAYER_TYPE,
+    RIG_LAYER_TYPE,
+    XGROUP_LAYER_TYPE,
+    GEOMETRY_LAYER_TYPE
+)
+CONTROL_PANEL_TYPE = 'controlPanel'
+
+# ======================================================================================================================
+# Names for Standard Transform Local Attributes
+# ======================================================================================================================
+
+TRANSFORM_ATTRS = ('translate', 'rotate', 'scale')
+
+# ======================================================================================================================
+# MetaData Attribute Names
+# ======================================================================================================================
+
+NODDLE_ID_ATTR = 'noddleId'
+NODDLE_VERSION_ATTR = 'noddleVersion'
+NODDLE_NAME_ATTR = 'noddleName'
+NODDLE_SIDE_ATTR = 'noddleSide'
+NODDLE_IS_NODDLE_ATTR = 'noddleIsNoddle'
+NODDLE_IS_ROOT_ATTR = 'noddleIsRoot'
+NODDLE_IS_ENABLED_ATTR = 'noddleEnabled'
+NODDLE_ROOT_TRANSFORM_ATTR = 'noddleRootTransform'
+NODDLE_RIG_CONFIG_ATTR = 'noddleConfig'
+NODDLE_CONTROL_DISPLAY_LAYER_ATTR = 'noddleControlDisplayLayer'
+NODDLE_ROOT_SELECTION_SET_ATTR = 'noddleRootSelectionSet'
+NODDLE_CONTROL_SELECTION_SET_ATTR = 'noddleControlSelectionSet'
+NODDLE_JOINT_SELECTION_SET_ATTR = 'noddleJointSelectionSet'
+NODDLE_SKELETON_SELECTION_SET_ATTR = 'noddleSkeletonSelectionSet'
+NODDLE_EXTRA_NODES_ATTR = 'noddleExtraNodes'
+NODDLE_SETTING_NODES_ATTR = 'noddleSettingNodes'
+NODDLE_SETTING_NODE_ATTR = 'noddleSettingNode'
+NODDLE_SETTING_NAME_ATTR = 'noddleSettingName'
+NODDLE_TAGGED_NODE_ATTR = 'noddleTaggedNode'
+NODDLE_TAGGED_NODE_SOURCE_ATTR = 'noddleTaggedNodeSource'
+NODDLE_TAGGED_NODE_ID_ATTR = 'noddleTaggedNodeId'
+NODDLE_IS_COMPONENT_ATTR = 'noddleIsComponent'
+NODDLE_IS_INPUT_ATTR = 'noddleIsInput'
+NODDLE_IS_OUTPUT_ATTR = 'noddleIsOutput'
+NODDLE_INPUTS_ATTR = 'noddleInputs'
+NODDLE_OUTPUTS_ATTR = 'noddleOutputs'
+NODDLE_INPUT_NODE_ATTR = 'noddleInputNode'
+NODDLE_INPUT_ID_ATTR = 'noddleInputId'
+NODDLE_IS_INPUT_ROOT_ATTR = 'noddleIsInputRoot'
+NODDLE_OUTPUT_NODE_ATTR = 'noddleOutputNode'
+NODDLE_OUTPUT_ID_ATTR = 'noddleOutputId'
+NODDLE_SOURCE_INPUTS_ATTR = 'noddleSourceInputs'
+NODDLE_SOURCE_INPUT_ATTR = 'noddleSourceInput'
+NODDLE_SOURCE_INPUT_CONSTRAINT_NODES_ATTR = 'noddleConstraintNodes'
+NODDLE_JOINTS_ATTR = 'noddleCritJoints'
+NODDLE_JOINT_ATTR = 'noddleJoint'
+NODDLE_JOINT_ID_ATTR = 'noddleJointId'
+NODDLE_REGIONS_ATTR = 'noddleCritRegions'
+NODDLE_REGION_NAME_ATTR = 'noddleRegionName'
+NODDLE_REGION_SIDE_ATTR = 'noddleRegionSide'
+NODDLE_REGION_TAG_ATTR = 'noddleRegionTag'
+NODDLE_REGION_GROUP_ATTR = 'noddleRegionGroup'
+NODDLE_REGION_START_JOINT_ATTR = 'noddleRegionStartJoint'
+NODDLE_REGION_END_JOINT_ATTR = 'noddleRegionEndJoint'
+NODDLE_CONTROL_MODE_ATTR = 'noddleControlMode'
+NODDLE_CONTROLS_ATTR = 'noddleCritControls'
+NODDLE_CONTROL_NODE_ATTR = 'noddleControlNode'
+NODDLE_CONTROL_ID_ATTR = 'noddleControlId'
+NODDLE_CONTROL_SRTS_ATR = 'noddleSrts'
+NODDLE_COMPONENT_TYPE_ATTR = 'noddleComponentType'
+NODDLE_CONTAINER_ATTR = 'noddleContainer'
+NODDLE_HAS_SKELETON_ATTR = 'noddleHasSkeleton'
+NODDLE_HAS_POLISHED_ATTR = 'noddleHasPolished'
+NODDLE_HAS_RIG_ATTR = 'noddleHasRig'
+NODDLE_COMPONENT_GROUP_ATTR = 'noddleComponentGroup'
+NODDLE_COMPONENT_DESCRIPTOR_ATTR = 'noddleComponentDescriptor'
+NODDLE_COMPONENT_GROUPS_ATTR = 'noddleComponentGroups'
+NODDLE_COMPONENT_GROUP_NAME_ATTR = 'noddleGroupName'
+NODDLE_GROUP_COMPONENTS_ATTR = 'noddleGroupComponents'
+NODDLE_EXPORT_ATTR = 'noddleExport'
+NODDLE_BIND_TRANSLATE_ATTR = 'noddleBindTranslate'
+NODDLE_BIND_ROTATE_ATTR = 'noddleBindRotate'
+
+# ======================================================================================================================
+# Component Descriptor Attribute Names
+# ======================================================================================================================
+
+NODDLE_DESCRIPTOR_CACHE_INFO_ATTR = 'noddleDefCacheInfo'
+NODDLE_DESCRIPTOR_CACHE_DEFORM_DAG_ATTR = 'noddleDescriptorCacheSkeletonLayerDag'
+NODDLE_DESCRIPTOR_CACHE_DEFORM_SETTINGS_ATTR = 'noddleDescriptorCacheSkeletonLayerSettings'
+NODDLE_DESCRIPTOR_CACHE_DEFORM_METADATA_ATTR = 'noddleDescriptorCacheSkeletonLayerMetadata'
+NODDLE_DESCRIPTOR_CACHE_INPUT_DAG_ATTR = 'noddleDescriptorCacheInputLayerDag'
+NODDLE_DESCRIPTOR_CACHE_INPUT_SETTINGS_ATTR = 'noddleDescriptorCacheInputLayerSettings'
+NODDLE_DESCRIPTOR_CACHE_INPUT_METADATA_ATTR = 'noddleDescriptorCacheInputLayerMetadata'
+NODDLE_DESCRIPTOR_CACHE_OUTPUT_DAG_ATTR = 'noddleDescriptorCacheOutputLayerDag'
+NODDLE_DESCRIPTOR_CACHE_OUTPUT_SETTINGS_ATTR = 'noddleDescriptorCacheOutputLayerSettings'
+NODDLE_DESCRIPTOR_CACHE_OUTPUT_METADATA_ATTR = 'noddleDescriptorCacheOutputLayerMetadata'
+NODDLE_DESCRIPTOR_CACHE_RIG_DAG_ATTR = 'noddleDescriptorCacheRigLayerDag'
+NODDLE_DESCRIPTOR_CACHE_RIG_DG_ATTR = 'noddleDescriptorCacheGuideLayerDg'
+NODDLE_DESCRIPTOR_CACHE_RIG_SETTINGS_ATTR = 'noddleDescriptorCacheRigLayerSettings'
+NODDLE_DESCRIPTOR_CACHE_RIG_METADATA_ATTR = 'noddleDescriptorCacheRigLayerMetadata'
+NODDLE_DESCRIPTOR_CACHE_SPACE_SWITCHING_ATTR = 'noddleDescriptorCacheSpaceSwitching'
+NODDLE_DESCRIPTOR_CACHE_ATTR_NAMES = (
+    NODDLE_DESCRIPTOR_CACHE_INFO_ATTR,
+    NODDLE_DESCRIPTOR_CACHE_DEFORM_DAG_ATTR,
+    NODDLE_DESCRIPTOR_CACHE_DEFORM_SETTINGS_ATTR,
+    NODDLE_DESCRIPTOR_CACHE_DEFORM_METADATA_ATTR,
+    NODDLE_DESCRIPTOR_CACHE_INPUT_DAG_ATTR,
+    NODDLE_DESCRIPTOR_CACHE_INPUT_SETTINGS_ATTR,
+    NODDLE_DESCRIPTOR_CACHE_INPUT_METADATA_ATTR,
+    NODDLE_DESCRIPTOR_CACHE_OUTPUT_DAG_ATTR,
+    NODDLE_DESCRIPTOR_CACHE_OUTPUT_SETTINGS_ATTR,
+    NODDLE_DESCRIPTOR_CACHE_OUTPUT_METADATA_ATTR,
+    NODDLE_DESCRIPTOR_CACHE_RIG_DAG_ATTR,
+    NODDLE_DESCRIPTOR_CACHE_RIG_DG_ATTR,
+    NODDLE_DESCRIPTOR_CACHE_RIG_SETTINGS_ATTR,
+    NODDLE_DESCRIPTOR_CACHE_RIG_METADATA_ATTR,
+    NODDLE_DESCRIPTOR_CACHE_SPACE_SWITCHING_ATTR
+)
+
+# ======================================================================================================================
+# Non Publishable Attributes
+# ======================================================================================================================
+
+ATTRIBUTES_TO_SKIP_PUBLISH = [NODDLE_ID_ATTR, 'metaNode', spaceswitch.TP_CONSTRAINTS_ATTR_NAME]
+
+# ======================================================================================================================
+# Extensions
+# ======================================================================================================================
+
+DESCRIPTOR_EXTENSION = '.descriptor'
+
+# ======================================================================================================================
+# Descriptor Keys
+# ======================================================================================================================
+
+VERSION_DESCRIPTOR_KEY = 'descriptorVersion'
+PARENT_DESCRIPTOR_KEY = 'parent'
+CONNECTIONS_DESCRIPTOR_KEY = 'connections'
+DAG_DESCRIPTOR_KEY = 'dag'
+DG_DESCRIPTOR_KEY = 'dg'
+SETTINGS_DESCRIPTOR_KEY = 'settings'
+NAME_DESCRIPTOR_KEY = 'name'
+SIDE_DESCRIPTOR_KEY = 'side'
+TYPE_DESCRIPTOR_KEY = 'type'
+ENABLED_DESCRIPTOR_KEY = 'enabled'
+METADATA_DESCRIPTOR_KEY = 'metadata'
+NAMING_PRESET_DESCRIPTOR_KEY = 'namingPreset'
+INPUT_LAYER_DESCRIPTOR_KEY = 'inputLayer'
+OUTPUT_LAYER_DESCRIPTOR_KEY = 'outputLayer'
+RIG_LAYER_DESCRIPTOR_KEY = 'rigLayer'
+SKELETON_LAYER_DESCRIPTOR_KEY = 'skeletonLayer'
+SKELETON_MARKING_MENU_DESCRIPTOR_KEY = 'markingMenuSkeleton'
+RIG_MARKING_MENU_DESCRIPTOR_KYE = 'markingMenuRig'
+ANIM_MARKING_MENU_DESCRIPTOR_KEY = 'markingMenuAnim'
+DEFAULT_SKELETON_MARKING_MENU = 'critDefaultSkeletonMenu'
+DEFAULT_RIG_MARKING_MENU = 'critDefaultRigMenu'
+LAYER_DESCRIPTOR_KEYS = (
+    INPUT_LAYER_DESCRIPTOR_KEY,
+    OUTPUT_LAYER_DESCRIPTOR_KEY,
+    RIG_LAYER_DESCRIPTOR_KEY,
+    SKELETON_LAYER_DESCRIPTOR_KEY
+)
+DESCRIPTOR_KEYS_TO_SKIP_UPDATE = (
+    INPUT_LAYER_DESCRIPTOR_KEY,
+    OUTPUT_LAYER_DESCRIPTOR_KEY,
+    SKELETON_LAYER_DESCRIPTOR_KEY,
+    RIG_LAYER_DESCRIPTOR_KEY,
+)
+
+# ======================================================================================================================
+# Naming Preset Keys
+# ======================================================================================================================
+
+DEFAULT_PRESET_NAME = 'Noddle'
+DEFAULT_BUILTIN_PRESET_NAME = 'noddle'
+
+# ======================================================================================================================
+# Environment Variable Keys
+# ======================================================================================================================
+
+COMPONENTS_ENV_VAR_KEY = 'NODDLE_COMPONENTS_PATHS'
+DESCRIPTORS_ENV_VAR_KEY = 'NODDLE_DESCRIPTORS_PATHS'
+
+# ======================================================================================================================
+# Build States
+# ======================================================================================================================
+
+NOT_BUILT_STATE = 0
+SKELETON_STATE = 1
+RIG_STATE = 2
+POLISH_STATE = 3
+
+# ======================================================================================================================
+# Build Script Function Types
+# ======================================================================================================================
+
+SKELETON_FUNCTION_TYPE = 0
+RIG_FUNCTION_TYPE = 1
+POLISH_FUNCTION_TYPE = 2
+DELETE_SKELETON_LAYER_FUNCTION_TYPE = 3
+DELETE_RIG_LAYER_FUNCTION_TYPE = 4
+DELETE_COMPONENT_FUNCTION_TYPE = 5
+DELETE_COMPONENTS_FUNCTION_TYPE = 6
+DELETE_RIG_FUNCTION_TYPE = 7
+BUILD_SCRIPT_FUNCTIONS_MAPPING = {
+    SKELETON_FUNCTION_TYPE: ('pre_skeleton_build', 'post_skeleton_build'),
+    RIG_FUNCTION_TYPE: ('pre_rig_build', 'post_rig_build'),
+    POLISH_FUNCTION_TYPE: ('pre_polish', 'post_polish_build'),
+    DELETE_SKELETON_LAYER_FUNCTION_TYPE: ('pre_delete_skeleton_layer', None),
+    DELETE_RIG_LAYER_FUNCTION_TYPE: ('pre_delete_rig_layer', None),
+    DELETE_COMPONENT_FUNCTION_TYPE: ('pre_delete_component', None),
+    DELETE_COMPONENTS_FUNCTION_TYPE: ('pre_delete_components', None),
+    DELETE_RIG_FUNCTION_TYPE: ('pre_delete_rig', None)
+}
 
 # ======================================================================================================================
 # Names
 # ======================================================================================================================
 
 
-class CharacterMembers(Enum):
+class CharacterMembers(enum.Enum):
     top_node = "rig"
     control_rig = "control_rig"
     geometry = "geometry_grp"
@@ -24,7 +263,7 @@ class CharacterMembers(Enum):
 # ======================================================================================================================
 
 
-class ColorIndex(Enum):
+class ColorIndex(enum.Enum):
     grey = 0
     black = 1
     dark_grey = 2
@@ -134,7 +373,12 @@ class ColorIndex(Enum):
         return cls._index_lookup.value[rgb]
 
 
-class SideColor(Enum):
+class SideColor(enum.Enum):
     c = ColorIndex.index_to_rgb(ColorIndex.yellow.value)
     l = ColorIndex.index_to_rgb(ColorIndex.blue.value)
     r = ColorIndex.index_to_rgb(ColorIndex.red.value)
+
+
+class RegionType(enum.Enum):
+    Root = 'root'
+    End = 'end'

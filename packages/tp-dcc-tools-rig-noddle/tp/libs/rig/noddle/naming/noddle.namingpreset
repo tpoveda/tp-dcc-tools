@@ -1,0 +1,13 @@
+{
+  "name": "Noddle",
+  "configs": [
+    {
+      "name": "noddleGlobalConfig",
+      "type": "global"
+    },
+    {
+      "name": "noddleRigConfig",
+      "type": "rig"
+    }
+  ]
+}

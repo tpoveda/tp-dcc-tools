@@ -11,6 +11,7 @@ import os
 from typing import Dict
 
 import yaml
+import yaml.representer
 
 from tp.core import log
 from tp.common.python import yamlordereddictloader
@@ -34,13 +35,12 @@ def validate_yaml(dictionary: Dict) -> bool:
         return False
 
 
-def write_to_file(data: Dict, filename: str, **kwargs: Dict) -> str:
+def write_to_file(data: Dict, filename: str, **kwargs) -> str | None:
     """
     Writes data to YAML file.
 
     :param Dict data: data to store into YAML file.
     :param str filename: name of the YAML file we want to store data into.
-    :param Dict kwargs: keyword arguments.
     :return: file name of the stored file.
     :rtype: str
     """

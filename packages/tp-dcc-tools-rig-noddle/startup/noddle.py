@@ -7,6 +7,7 @@ import inspect
 from Qt.QtWidgets import QApplication
 
 from tp.core import log
+from tp.preferences.interfaces import noddle
 from tp.common.resources import api as resources
 from tp.bootstrap.core import exceptions, package
 
@@ -26,6 +27,10 @@ def startup(_: package.Package):
     app = QApplication.instance() or QApplication(sys.argv)
     resources_path = os.path.join(os.path.dirname(root_path), 'resources')
     resources.register_resource(resources_path, key='tp-dcc-tools-rig-noddle')
+
+    # Update Noddle preferences
+    noddle_interface = noddle.noddle_interface()
+    noddle_interface.upgrade_assets()
 
 
 def shutdown(bootstrap_package: package.Package):

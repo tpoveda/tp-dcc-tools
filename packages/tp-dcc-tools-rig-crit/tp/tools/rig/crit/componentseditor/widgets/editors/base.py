@@ -104,6 +104,6 @@ class BaseSettingsWidget(qt.QWidget):
 			self._type_line.setText(self._default_type)
 			self._display_name_line.setText(self._default_display_name)
 			self._description_text.setPlainText(self._default_description)
-			self._version_spin.setValue(int(self._default_version))
-			self._descriptor_version_spin.setValue(int(self._default_descriptor_version))
+			self._version_spin.setValue(int(self._default_version or 0))
+			self._descriptor_version_spin.setValue(int(self._default_descriptor_version or 0))
 			self._side_combo.setCurrentText(self._default_side)

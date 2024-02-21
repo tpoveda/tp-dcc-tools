@@ -68,7 +68,7 @@ def clean_scene():
 		cmds.delete(graph_editor_info)
 		logger.info(f'Scene cleanup deleted GraphEditorInfo nodes : \n{graph_editor_info}')
 
-	# delete orphaned and ulocked reference nodes
+	# delete orphaned and unlocked reference nodes
 	reference_nodes = [x for x in cmds.ls(type='reference') if not cmds.listConnections(x) and not cmds.lockNode(
 		x, query=True, lock=True)]
 	if reference_nodes:

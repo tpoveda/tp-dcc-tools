@@ -858,7 +858,7 @@ class DGNode:
                 return False
         return self.mfn().hasAttribute(attribute_name)
 
-    def attribute(self, name):
+    def attribute(self, name: str) -> Plug | None:
         """
         Returns the attribute with the given name this node.
 
@@ -2283,13 +2283,13 @@ class Plug:
 
         self._mplug.isKeyable = flag
 
-    def child(self, index):
+    def child(self, index) -> Plug:
         """
         Returns the child plug by index.
 
         :param int index: child index.
         :return: child plug at given index.
-        :rtype: OpenMaya.MPlug
+        :rtype: Plug
         """
 
         assert self._mplug.isCompound, 'Plug: {} is not a compound'.format(self._mplug.name())
@@ -2299,7 +2299,7 @@ class Plug:
 
         return Plug(self._node, self._mplug.child(index))
 
-    def element(self, index):
+    def element(self, index: int) -> Plug:
         """
         Returns the logical element plug if this plug is an array.
 

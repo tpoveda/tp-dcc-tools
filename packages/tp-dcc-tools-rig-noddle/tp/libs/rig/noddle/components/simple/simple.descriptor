@@ -1,0 +1,6 @@
+name: simple
+version: 1
+descriptorVersion: 1
+type: simple
+side: M
+description: 'Simple component for Noddle rigs.'

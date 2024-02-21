@@ -8,9 +8,9 @@ from tp.maya.cmds import contexts
 
 if typing.TYPE_CHECKING:
 	from tp.maya.api import DagNode
-	from tp.libs.rig.crit.maya.core.rig import Rig
-	from tp.libs.rig.crit.maya.core.component import Component
-	from tp.libs.rig.crit.maya.meta.nodes import Guide
+	from tp.libs.rig.crit.core.rig import Rig
+	from tp.libs.rig.crit.core.component import Component
+	from tp.libs.rig.crit.meta.nodes import Guide
 
 
 def create_rig(name: str | None = None, namespace: str | None = None) -> Rig:

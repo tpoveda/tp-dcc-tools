@@ -1,0 +1,232 @@
+name: world
+version: 1
+descriptorVersion: 1
+type: world
+side: M
+description: ''
+guideLayer:
+  dag:
+    - id: root
+      name: root
+      type: transform
+      critType: guide
+      parent: null
+      translate: [ 0.0, 0.0, 0.0 ]
+      rotate: [ 0.0, 0.0, 0.0, 1.0 ]
+      scale: [ 4.0, 4.0, 4.0 ]
+      rotateOrder: 0
+      matrix: [ 4, 0, 0, 0, 0, 4, 0, 0, 0, 0, 4, 0, 0, 0, 0, 1 ]
+      worldMatrix: [ 4, 0, 0, 0, 0, 4, 0, 0, 0, 0, 4, 0, 0, 0, 0, 1 ]
+      shape: null
+      attributes: []
+      pivotShape: 2
+      pivotColor: [0.38, 0.0, 0.0]
+      srts:
+        - name: root
+          parent: null
+          type: transform
+          critType: transform
+          translate: [0.0, 0.0, 0.0]
+          rotate: [0.0, 0.0, 0.0, 1.0]
+          scale: [1.0, 1.0, 1.0]
+          rotateOrder: 0
+          matrix: [1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1]
+          worldMatrix: [1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1]
+      children:
+        - id: world
+          name: world
+          type: transform
+          critType: guide
+          parent: root
+          translate: [ 0.0, 0.0, 0.0 ]
+          rotate: [ 0.0, 0.0, 0.0, 1.0 ]
+          scale: [ 3.0, 3.0, 3.0 ]
+          matrix: [ 3.0, 0, 0, 0, 0, 3.0, 0, 0, 0, 0, 3.0, 0, 0, 0, 0, 1 ]
+          worldMatrix: [ 3, 0, 0, 0, 0, 3, 0, 0, 0, 0, 3, 0, 0, 0, 0, 1 ]
+          rotateOrder: 0
+          shape: world
+          color: [0.95, 0.15, 0.15]
+          shapeTransform:
+            translate: [0.0, 0.0, 0.0]
+            rotate: [0.0, 0.0, 0.0, 1.0]
+            scale: [38.0, 38.0, 38.0]
+          pivotShape: 0
+          pivotColor: [1.0, 1.0, 0.0]
+          srts: []
+          children:
+            - id: offset
+              name: offset
+              type: transform
+              critType: guide
+              parent: world
+              translate: [0.0, 0.0, 0.0]
+              rotate: [0.0, 0.0, 0.0, 1.0]
+              scale: [2.0, 2.0, 2.0]
+              rotateOrder: 0
+              matrix: [2, 0, 0, 0, 0, 2, 0, 0, 0, 0, 2, 0, 0, 0, 0, 1]
+              worldMatrix: [2, 0, 0, 0, 0, 2, 0, 0, 0, 0, 2, 0, 0, 0, 0, 1]
+              shape: worldmaster
+              shapeTransform:
+                translate: [0.0, 0.0, 0.0]
+                rotate: [0.0, 0.0, 0.0, 1.0]
+                scale: [25.0, 25.0, 25.0]
+              color: [0.95, 0.15, 0.3]
+              pivotShape: 0
+              pivotColor: [1.0, 1.0, 0.0]
+              srts:
+                - name: offset
+                  parent: world
+                  type: transform
+                  critType: transform
+                  translate: [0.0, 0.0, 0.0]
+                  rotate: [0.0, 0.0, 0.0, 1.0]
+                  scale: [1.0, 1.0, 1.0]
+                  rotateOrder: 0
+                  matrix: [1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1]
+                  worldMatrix: [1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1]
+              children:
+                - id: rootMotion
+                  name: rootMotion
+                  type: transform
+                  critType: guide
+                  parent: offset
+                  translate: [ 0.0, 0.0, 0.0 ]
+                  rotate: [ 0.0, 0.0, 0.0, 1.0 ]
+                  scale: [ 1.0, 1.0, 1.0 ]
+                  rotateOrder: 0
+                  matrix: [ 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1 ]
+                  worldMatrix: [ 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1 ]
+                  shape: worldroot
+                  shapeTransform:
+                    translate: [ 0.0, 0.0, 0.0 ]
+                    rotate: [ 0.0, 0.0, 0.0, 1.0 ]
+                    scale: [ 15.0, 15.0, 15.0 ]
+                  color: [ 0.95, 0.15, 0.4 ]
+                  pivotShape: 0
+                  pivotColor: [ 1.0, 1.0, 0.0 ]
+                  srts:
+                    - name: rootMotion
+                      parent: offset
+                      type: transform
+                      critType: transform
+                      translate: [ 0.0, 0.0, 0.0 ]
+                      rotate: [ 0.0, 0.0, 0.0, 1.0 ]
+                      scale: [ 1.0, 1.0, 1.0 ]
+                      rotateOrder: 0
+                      matrix: [ 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1 ]
+                      worldMatrix: [ 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1 ]
+                  children: []
+  settings:
+    - name: rootJoint
+      type: 0
+      value: true
+      channelBox: true
+      default: false
+      isArray: false
+      isChild: false
+      isDynamic: true
+      isElement: false
+      keyable: false
+      locked: false
+      max: 1
+      min: 0
+      softMax: null
+      softMin: null
+    - name: _
+      channelBox: true
+      isDynamic: true
+      keyable: false
+      locked: true
+      type: 12
+      value: 0
+      enums:
+        - Display
+    - name: worldVis
+      default: false
+      isDynamic: true
+      keyable: false
+      locked: false
+      channelBox: true
+      type: 0
+      value: false
+    - name: offsetVis
+      default: true
+      isDynamic: true
+      keyable: false
+      locked: false
+      channelBox: true
+      type: 0
+      value: true
+    - name: rootMotionVis
+      default: false
+      isDynamic: true
+      keyable: false
+      locked: false
+      channelBox: true
+      type: 0
+      value: false
+inputLayer:
+  dag:
+    - id: world
+      name: world
+      critType: input
+      root: true
+      parent: null
+      translate: [0.0, 0.0, 0.0]
+      rotate: [0.0, 0.0, 0.0, 1.0]
+      rotateOrder: 2
+      children: []
+  settings: []
+outputLayer:
+  dag:
+    - id: world
+      name: world
+      critType: output
+      parent: null
+      translate: [0.0, 0.0, 0.0]
+      rotate: [0.0, 0.0, 0.0, 1.0]
+      rotateOrder: 2
+      children:
+        - id: offset
+          name: offset
+          critType: output
+          children:
+            - id: rootMotion
+              name: rootMotion
+              critType: output
+  settings: []
+skeletonLayer: {}
+rigLayer:
+  dag: []
+  settings:
+    controlPanel:
+      - name: _
+        type: 12
+        locked: true
+        keyable: false
+        channelBox: true
+        isDynamic: true
+        enums:
+          - 'VISIBILITY'
+      - name: displayOffset
+        type: 0
+        locked: false
+        keyable: true
+        channelBox: true
+        isDynamic: true
+        default: false
+        value: false
+        softMin: null
+        softMax: null
+        isArray: false
+      - name: displayRootMotion
+        type: 0
+        locked: false
+        keyable: true
+        channelBox: true
+        isDynamic: true
+        default: false
+        value: false
+        softMin: null
+        softMax: null
+        isArray: false

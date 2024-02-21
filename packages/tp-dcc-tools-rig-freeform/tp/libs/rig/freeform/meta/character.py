@@ -5,9 +5,10 @@ import typing
 from overrides import override
 
 from tp.maya import api
-from tp.maya.meta import base
+from tp.maya.meta import base, utils
 
 from tp.libs.rig.freeform import consts
+from tp.libs.rig.freeform.utils import scene
 
 if typing.TYPE_CHECKING:
 	from tp.libs.rig.freeform.meta.skeleton import FreeformJoints
@@ -64,6 +65,23 @@ class FreeformCharacter(base.DependentNode):
 		self.attribute(consts.COLOR_SET_ATTR).set(color_set)
 		self.attribute(consts.SCALAR_ATTR).set(scalar)
 		self.create_transform(f'{self.fullPathName(partial_name=True, include_namespace=False)}_Character')
+
+	@override(check_signature=False)
+	def delete(
+			self, move_namespace: str | None = None, mod: api.OpenMaya.MDGModifier | None = None,
+			apply: bool = True) -> bool:
+
+		utils.delete_network(self, delete_root_node=False)
+
+		character_group = self.root_transform()
+		namespace = character_group.namespace()
+		character_group.delete()
+		if namespace:
+			pass
+
+		super().delete(mod=mod, apply=apply)
+
+		scene.clean_scene()
 
 	def root_transform(self) -> api.DagNode | None:
 		"""

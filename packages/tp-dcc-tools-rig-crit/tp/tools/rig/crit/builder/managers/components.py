@@ -9,8 +9,8 @@ from tp.common import plugin
 from tp.tools.rig.crit.builder.models import component
 
 if typing.TYPE_CHECKING:
-	from tp.libs.rig.crit.maya.core.component import Component
-	from tp.libs.rig.crit.maya.core.managers import ComponentsManager
+	from tp.libs.rig.crit.core.component import Component
+	from tp.libs.rig.crit.core.managers import ComponentsManager
 
 
 class ComponentsModelManager:
